@@ -28,7 +28,7 @@
       curtain: ["rgba(58, 22, 110, 0)", "rgba(58, 22, 110, 0.85)", "rgba(34, 12, 70, 0.95)", "rgba(70, 28, 130, 0.9)", "rgba(20, 8, 44, 1)"],
       obj: "#0a0418", objRim: "rgba(255, 113, 206, 0.95)", plantRim: "rgba(61, 255, 176, 0.55)", steam: "rgba(239, 230, 255, 0.22)",
       crownBase: [46, 28, 92], crownGlow: 0.55,
-      train: { body: ["#e4ddf7", "#9a8cc9"], stripe: "#ff3d6e", win: "rgba(255, 214, 140, 0.95)", cab: "rgba(255, 230, 180, 0.9)", under: "#140a2a", glow: 0.9 },
+      train: { body: ["#e4ddf7", "#9a8cc9"], stripe: "#ff3d6e", roof: "#a597d4", win: "rgba(255, 214, 140, 0.95)", cab: "rgba(255, 230, 180, 0.9)", under: "#140a2a", glow: 0.9 },
     },
     day: {
       sky: [[0, "#86b4ff"], [0.34, "#b5a9ff"], [0.64, "#f1a7d9"], [0.88, "#ffc4b4"], [1, "#ffe2ad"]],
@@ -49,7 +49,7 @@
       curtain: ["rgba(255, 180, 222, 0)", "rgba(255, 180, 222, 0.75)", "rgba(244, 150, 205, 0.9)", "rgba(255, 196, 228, 0.85)", "rgba(230, 140, 196, 1)"],
       obj: "#4a3683", objRim: "rgba(255, 255, 255, 0.9)", plantRim: "rgba(255, 255, 255, 0.7)", steam: "rgba(90, 70, 150, 0.3)",
       crownBase: [150, 130, 205], crownGlow: 0.2,
-      train: { body: ["#ffffff", "#d4caf0"], stripe: "#e0284a", win: "#4b3b80", cab: "#3a2c6a", under: "#4a3a7c", glow: 0.25 },
+      train: { body: ["#ffffff", "#d4caf0"], stripe: "#e0284a", roof: "#cfc6ec", win: "#4b3b80", cab: "#3a2c6a", under: "#4a3a7c", glow: 0.25 },
     },
   };
   const stored = (() => {
@@ -230,23 +230,21 @@
     const carH = Math.max(7, d * 0.08);
     const monLeft = monBox.left - box.left;
     const monRight = monBox.right - box.left;
-    const p0 = [frame.right + carH * 4, horizon + d * 0.64];
-    const p1 = [monRight + (frame.right - monRight) * 0.45, horizon + d * 0.55];
-    const p2 = [(monLeft + monRight) / 2, horizon + d * 0.38];
-    const lut = [{ s: 0, x: p0[0], y: p0[1] }];
-    for (let i = 1; i <= 240; i++) {
-      const u = i / 240;
-      const x = (1 - u) * (1 - u) * p0[0] + 2 * (1 - u) * u * p1[0] + u * u * p2[0];
-      const y = (1 - u) * (1 - u) * p0[1] + 2 * (1 - u) * u * p1[1] + u * u * p2[1];
+    const drop = d * 0.3;
+    const lut = [];
+    for (let i = 0; i <= 240; i++) {
+      const [x, y] = quad(fw, 1 - (i / 240) * 0.75);
       const prev = lut[i - 1];
-      lut.push({ s: prev.s + Math.hypot(x - prev.x, y - prev.y), x, y });
+      lut.push({ s: prev ? prev.s + Math.hypot(x - prev.x, y + drop - prev.y) : 0, x, y: y + drop });
     }
     const sAtX = (x) => (lut.find((q) => q.x <= x) || lut[lut.length - 1]).s;
     const cars = 5;
-    const gap = Math.max(1, carH * 0.08);
+    const gap = Math.max(1, carH * 0.05);
     const len = cars * carH * 3.4 + (cars - 1) * gap;
     const clipX = (monLeft + monRight) / 2;
     world.train = {
+      horizon,
+      near: lut[0].y - horizon,
       h: carH,
       w: carH * 3.4,
       cars,
@@ -807,8 +805,20 @@
     return span(lo, hi, s - lut[lo].s);
   }
 
-  function drawCar(C, w, h, nose, tail) {
+  function drawCar(C, w, h, nose, tail, link) {
     const top = -h;
+    if (!tail) {
+      ctx.fillStyle = C.under;
+      ctx.fillRect(w - 1, top + h * 0.15, link + 2, h * 0.75);
+    }
+    ctx.fillStyle = C.roof;
+    ctx.beginPath();
+    ctx.moveTo(nose ? h * 0.62 : h * 0.06, top);
+    ctx.lineTo(nose ? h * 0.78 : h * 0.12, top - h * 0.16);
+    ctx.lineTo(w - h * 0.06, top - h * 0.16);
+    ctx.lineTo(w - h * 0.02, top);
+    ctx.closePath();
+    ctx.fill();
     const body = ctx.createLinearGradient(0, top, 0, 0);
     body.addColorStop(0, C.body[0]);
     body.addColorStop(1, C.body[1]);
@@ -865,8 +875,7 @@
     const tr = world.train;
     const front = trainFront(t);
     if (front === null) return;
-    const total = tr.lut[tr.lut.length - 1].s;
-    const size = (s) => 1 - 0.22 * Math.min(1, Math.max(0, s / total));
+    const size = (s) => Math.max(0.4, (along(tr, s).y - tr.horizon) / tr.near);
     ctx.save();
     ctx.beginPath();
     ctx.rect(tr.clipX, 0, W - tr.clipX, H);
@@ -881,7 +890,7 @@
       ctx.translate(mid.x, mid.y);
       ctx.rotate(mid.angle);
       ctx.translate(-w / 2, 0);
-      drawCar(P.train, w, h, i === 0, i === tr.cars - 1);
+      drawCar(P.train, w, h, i === 0, i === tr.cars - 1, tr.gap * k);
       ctx.restore();
       s -= w + tr.gap * k;
     }
