@@ -108,6 +108,16 @@
     };
     const horizon = frame.top + (frame.bottom - frame.top) * 0.6;
     const side = Math.max(0, rowBox.left - box.left);
+    const rel = (el) => {
+      if (!el || !el.offsetParent) return null;
+      const b = el.getBoundingClientRect();
+      return { l: b.left - box.left, r: b.right - box.left, t: b.top - box.top, b: b.bottom - box.top };
+    };
+    const props = {
+      caseBox: rel(document.querySelector(".case")),
+      keys: rel(document.querySelector(".keyboard")),
+      disks: rel(document.querySelector(".disk-box")),
+    };
     const monL = narrow ? W * 0.5 : Math.max(frame.left + 140, monBox.left - box.left);
     const monR = narrow ? W * 0.5 : Math.min(frame.right - 140, monBox.right - box.left);
     const sfH = Math.min((horizon - frame.top) * 0.66, U * 0.38);
@@ -153,7 +163,7 @@
       hills.push([x, horizon - sfH * rand(0.05, 0.15)]);
     }
 
-    world = { narrow, U, side, frame, horizon, deskTop, stars, clouds, sun, moon, hills, deckY, towerH, t1, t2, right, left, sfH, d };
+    world = { narrow, U, side, props, frame, horizon, deskTop, stars, clouds, sun, moon, hills, deckY, towerH, t1, t2, right, left, sfH, d };
 
     const sky = layer();
     const g = sky.g;
@@ -765,15 +775,54 @@
     ctx.fillStyle = curtain;
     ctx.fillRect(frame.right - W * 0.06, 0, W * 0.06 + (W - frame.right), frame.bottom);
 
-    const { U, side, narrow } = world;
-    if (narrow || side < 150) {
-      const front = deskTop + Math.min(U * 0.11, 90);
-      bunny(W * 0.11, front, Math.min(U * 0.07, 48), t);
-      speaker(W * 0.9, front, Math.min(U * 0.1, 70), t);
-    } else {
-      bunny(side * 0.42, deskTop, Math.min(U * 0.11, side * 0.45), t);
-      if (side > 240) mug(side * 0.82, deskTop, U * 0.05, t);
-      speaker(W - side * 0.45, deskTop, Math.min(U * 0.17, side * 0.7), t);
+    const { U, props } = world;
+    const cb = props.caseBox;
+    const leftGap = cb ? cb.l - frame.left : 0;
+    const rightGap = cb ? frame.right - cb.r : 0;
+    const pad = 10;
+
+    const bunnyCounter = Math.min(U * 0.11, (leftGap - pad * 2) / 1.2);
+    const speakerCounter = Math.min(U * 0.17, (rightGap - pad * 2) / 0.62);
+
+    const front = props.disks ? props.disks.b : deskTop + Math.min(U * 0.11, 90);
+    const leftEdge = props.keys ? props.keys.l : props.disks ? props.disks.l : W * 0.35;
+    const rightEdge = props.disks ? props.disks.r : W * 0.65;
+    const frontLeft = leftEdge - frame.left;
+    const frontRight = frame.right - rightEdge;
+
+    const bunnyUp = bunnyCounter >= 40;
+    const speakerUp = speakerCounter >= 46;
+    const speakerRight = !speakerUp && frontRight > 50;
+    const speakerLeft = !speakerUp && !speakerRight;
+
+    if (bunnyUp) {
+      const bx = frame.left + pad + bunnyCounter * 0.62;
+      bunny(bx, deskTop, bunnyCounter, t);
+      const mugSize = Math.min(U * 0.05, bunnyCounter * 0.45);
+      const mx = cb.l - pad - mugSize * 0.6;
+      if (mx - mugSize * 0.5 > bx + bunnyCounter * 0.7) mug(mx, deskTop, mugSize, t);
+    }
+
+    const leftItems = (bunnyUp ? 0 : 1) + (speakerLeft ? 1 : 0);
+    if (leftItems && frontLeft > 44) {
+      const slot = (frontLeft - pad) / leftItems;
+      let x = frame.left + pad / 2;
+      if (!bunnyUp) {
+        const s = Math.min(U * 0.08, (slot - pad) / 1.2);
+        bunny(x + slot / 2, front, s, t);
+        x += slot;
+      }
+      if (speakerLeft && slot > 34) {
+        const s = Math.min(U * 0.11, (slot - pad) / 0.62);
+        speaker(x + slot / 2, front, s, t);
+      }
+    }
+
+    if (speakerUp) {
+      speaker(cb.r + rightGap / 2, deskTop, speakerCounter, t);
+    } else if (speakerRight) {
+      const s = Math.min(U * 0.11, (frontRight - pad * 2) / 0.62);
+      speaker(rightEdge + frontRight / 2, front, s, t);
     }
   }
 

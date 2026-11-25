@@ -765,10 +765,16 @@ body.playing .term .vinyl-arm { transform: rotate(28deg); }
   padding-block: 40px 48px;
 }
 
+@media (max-width: 820px) and (min-width: 641px) {
+  .keyboard { width: 56%; }
+}
+
 @media (max-width: 640px) {
   :root { --mw: min(640px, calc(100vw - 32px)); }
   .topbar nav a[href="#read"] { display: none; }
   .topbar nav { gap: 14px; }
+  .mark { font-size: 16px; white-space: nowrap; }
+  .mode-toggle { white-space: nowrap; font-size: 18px; padding: 4px 10px 3px; }
   .stage { min-height: auto; padding-block: 72px 36px; }
   .desk-row { display: flex; justify-content: center; }
   .keyboard { display: none; }
