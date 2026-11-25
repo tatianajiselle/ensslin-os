@@ -28,6 +28,7 @@
       curtain: ["rgba(58, 22, 110, 0)", "rgba(58, 22, 110, 0.85)", "rgba(34, 12, 70, 0.95)", "rgba(70, 28, 130, 0.9)", "rgba(20, 8, 44, 1)"],
       obj: "#0a0418", objRim: "rgba(255, 113, 206, 0.95)", plantRim: "rgba(61, 255, 176, 0.55)", steam: "rgba(239, 230, 255, 0.22)",
       crownBase: [46, 28, 92], crownGlow: 0.55,
+      train: { body: ["#e4ddf7", "#9a8cc9"], stripe: "#ff3d6e", win: "rgba(255, 214, 140, 0.95)", cab: "rgba(255, 230, 180, 0.9)", under: "#140a2a", wire: "rgba(255, 140, 200, 0.4)", glow: 0.9 },
     },
     day: {
       sky: [[0, "#86b4ff"], [0.34, "#b5a9ff"], [0.64, "#f1a7d9"], [0.88, "#ffc4b4"], [1, "#ffe2ad"]],
@@ -48,6 +49,7 @@
       curtain: ["rgba(255, 180, 222, 0)", "rgba(255, 180, 222, 0.75)", "rgba(244, 150, 205, 0.9)", "rgba(255, 196, 228, 0.85)", "rgba(230, 140, 196, 1)"],
       obj: "#4a3683", objRim: "rgba(255, 255, 255, 0.9)", plantRim: "rgba(255, 255, 255, 0.7)", steam: "rgba(90, 70, 150, 0.3)",
       crownBase: [150, 130, 205], crownGlow: 0.2,
+      train: { body: ["#ffffff", "#d4caf0"], stripe: "#e0284a", win: "#4b3b80", cab: "#3a2c6a", under: "#4a3a7c", wire: "rgba(80, 60, 140, 0.45)", glow: 0.25 },
     },
   };
   const stored = (() => {
@@ -224,6 +226,27 @@
       lw: Math.max(5, d * 0.05),
     };
     world.freeway = fw;
+
+    const carH = Math.max(7, d * 0.075);
+    const carW = carH * 3.4;
+    const cars = 5;
+    const gap = Math.max(1, carH * 0.08);
+    const len = cars * carW + (cars - 1) * gap;
+    const trackY = horizon + d * 0.5;
+    const monLeft = monBox.left - box.left;
+    const monRight = monBox.right - box.left;
+    world.train = {
+      y: trackY,
+      h: carH,
+      w: carW,
+      cars,
+      gap,
+      len,
+      wireY: trackY - carH * 1.55,
+      enter: frame.right + 40,
+      stop: Math.max(monLeft, monRight - len * 0.55),
+      exit: frame.left - len - 40,
+    };
     world.cars = Array.from({ length: Math.round(W / 26) }, () => ({ u: Math.random(), v: rand(0.00004, 0.00007), dir: Math.random() < 0.5 ? 1 : -1 }));
 
     const rows = [0.16, 0.5, 0.86];
@@ -249,6 +272,21 @@
         x += w + rand(0, 6);
       }
     });
+    const tr = world.train;
+    m.fillStyle = P.train.under;
+    m.fillRect(frame.left - 30, tr.y, frame.right - frame.left + 60, Math.max(1.5, tr.h * 0.12));
+    m.strokeStyle = P.train.wire;
+    m.lineWidth = 1;
+    m.beginPath();
+    m.moveTo(frame.left - 30, tr.wireY);
+    m.lineTo(frame.right + 30, tr.wireY);
+    for (let x = frame.right - tr.w * 0.4; x > frame.left - 30; x -= tr.w * 1.6) {
+      m.moveTo(x, tr.y);
+      m.lineTo(x, tr.wireY - tr.h * 0.25);
+      m.moveTo(x - tr.h * 0.35, tr.wireY - tr.h * 0.1);
+      m.lineTo(x, tr.wireY - tr.h * 0.1);
+    }
+    m.stroke();
     world.midground = mid.c;
 
     const trees = layer();
@@ -739,6 +777,100 @@
     }
   }
 
+  const TRAIN = { cycle: 48000, arrive: 8000, dwell: 10000, depart: 9000, delay: 1500 };
+
+  function trainFront(t) {
+    const tr = world.train;
+    if (still.matches) return tr.stop;
+    const p = (((t - TRAIN.delay) % TRAIN.cycle) + TRAIN.cycle) % TRAIN.cycle;
+    if (p < TRAIN.arrive) {
+      const e = 1 - Math.pow(1 - p / TRAIN.arrive, 3);
+      return tr.enter + (tr.stop - tr.enter) * e;
+    }
+    if (p < TRAIN.arrive + TRAIN.dwell) return tr.stop;
+    const q = p - TRAIN.arrive - TRAIN.dwell;
+    if (q < TRAIN.depart) {
+      const e = q / TRAIN.depart;
+      return tr.stop + (tr.exit - tr.stop) * e * e;
+    }
+    return null;
+  }
+
+  function drawTrain(t) {
+    const tr = world.train;
+    const front = trainFront(t);
+    if (front === null || t < TRAIN.delay && !still.matches) return;
+    const C = P.train;
+    const { h, w } = tr;
+    const bottom = tr.y;
+    const top = bottom - h;
+    const body = ctx.createLinearGradient(0, top, 0, bottom);
+    body.addColorStop(0, C.body[0]);
+    body.addColorStop(1, C.body[1]);
+    for (let i = 0; i < tr.cars; i++) {
+      const x = front + i * (w + tr.gap);
+      if (x > W + 10 || x + w < -10) continue;
+      const nose = i === 0;
+      const tail = i === tr.cars - 1;
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      if (nose) {
+        ctx.moveTo(x + h * 0.55, top);
+        ctx.lineTo(x + w - h * 0.12, top);
+        ctx.quadraticCurveTo(x + w, top, x + w, top + h * 0.12);
+        ctx.lineTo(x + w, bottom);
+        ctx.lineTo(x, bottom);
+        ctx.lineTo(x, top + h * 0.6);
+        ctx.closePath();
+      } else {
+        ctx.roundRect(x, top, w, h, [h * 0.12, h * 0.12, 0, 0]);
+      }
+      ctx.fill();
+      ctx.fillStyle = C.stripe;
+      ctx.fillRect(x + (nose ? h * 0.05 : 0), bottom - h * 0.3, w - (nose ? h * 0.05 : 0), Math.max(1, h * 0.11));
+      ctx.fillStyle = C.under;
+      ctx.fillRect(x, bottom - h * 0.1, w, h * 0.1);
+      ctx.fillStyle = C.win;
+      const start = x + (nose ? h * 0.85 : h * 0.3);
+      for (let wx = start; wx + h * 0.32 < x + w - h * 0.2; wx += h * 0.52) {
+        ctx.fillRect(wx, top + h * 0.17, h * 0.32, h * 0.2);
+        ctx.fillRect(wx, top + h * 0.47, h * 0.32, h * 0.16);
+      }
+      if (nose) {
+        ctx.fillStyle = C.cab;
+        ctx.beginPath();
+        ctx.moveTo(x + h * 0.55, top + h * 0.12);
+        ctx.lineTo(x + h * 0.72, top + h * 0.12);
+        ctx.lineTo(x + h * 0.72, top + h * 0.42);
+        ctx.lineTo(x + h * 0.16, top + h * 0.42);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = C.under;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(x + w * 0.45, top);
+        ctx.lineTo(x + w * 0.55, top - (top - tr.wireY) * 0.5);
+        ctx.lineTo(x + w * 0.45, tr.wireY);
+        ctx.stroke();
+        const hx = x + h * 0.1;
+        const hy = bottom - h * 0.2;
+        const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, h * 1.4);
+        glow.addColorStop(0, `rgba(255, 250, 225, ${C.glow})`);
+        glow.addColorStop(1, "rgba(255, 250, 225, 0)");
+        ctx.fillStyle = glow;
+        ctx.beginPath();
+        ctx.arc(hx, hy, h * 1.4, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fffbe8";
+        ctx.fillRect(hx - 1, hy - 1, 2.5, 2);
+      }
+      if (tail) {
+        ctx.fillStyle = "#ff3355";
+        ctx.fillRect(x + w - 2.5, bottom - h * 0.24, 2, 2);
+      }
+    }
+  }
+
   function room(t) {
     const { frame, deskTop } = world;
     const wood = P.wood;
@@ -978,6 +1110,7 @@
     drawCrown(t);
     ctx.drawImage(world.midground, 0, 0, W, H);
     drawCars(t);
+    drawTrain(t);
     ctx.drawImage(world.trees, 0, 0, W, H);
     room(t);
   }
