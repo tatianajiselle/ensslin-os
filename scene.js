@@ -21,6 +21,7 @@
       ground: ["#2b1452", "#0d061c"], rows: ["#2a1450", "#1d0d3a", "#130828"], rowRim: "rgba(255, 150, 200, 0.35)",
       fw: ["#1a0c36", "rgba(255, 140, 200, 0.6)", "#170b30"],
       bridge: "#24134a", bayLights: 1, deckLights: "rgba(255, 211, 110, 0.85)",
+      tree: ["#0c0619", "rgba(255, 113, 206, 0.5)", "rgba(255, 140, 210, 0.22)"],
       wood: "#0b0519", frameRim: "rgba(255, 113, 206, 0.28)",
       sill: ["#2b1453", "#150a2c"], sillLine: "rgba(255, 140, 210, 0.6)",
       desk: ["#22103f", "#07030f"], deskEdge: "rgba(255, 79, 184, 0.75)",
@@ -41,6 +42,7 @@
       ground: ["#a48ad2", "#6f56a2"], rows: ["#9781c9", "#8169b6", "#6a539f"], rowRim: "rgba(255, 245, 250, 0.6)",
       fw: ["#5c4892", "rgba(255, 255, 255, 0.7)", "#6a56a0"],
       bridge: "#6c5fa6", bayLights: 0.25, deckLights: "rgba(255, 255, 255, 0.5)",
+      tree: ["#3f2f6c", "rgba(255, 255, 255, 0.45)", "rgba(255, 255, 255, 0.3)"],
       wood: "#cdbdf0", frameRim: "rgba(255, 255, 255, 0.8)",
       sill: ["#efe6ff", "#d3c3f5"], sillLine: "rgba(255, 255, 255, 0.95)",
       desk: ["#dccdfb", "#a993d9"], deskEdge: "rgba(255, 113, 206, 0.7)",
@@ -281,6 +283,13 @@
     });
     world.midground = mid.c;
 
+    const trees = layer();
+    const tg = trees.g;
+    if (!narrow) {
+      eucalyptus(tg, right.b - rw * 0.06, frame.bottom + 6, Math.min(d * 1.05 + sfH * 0.2, U * 0.46), rw * 0.22);
+    }
+    world.trees = trees.c;
+
   }
 
   function tower(g, b, base) {
@@ -406,6 +415,48 @@
 
 
 
+
+  function eucalyptus(g, x, base, h, spread) {
+    const clusters = Array.from({ length: 7 }, (_, i) => ({
+      cx: x + rand(-spread * 0.5, spread * 0.5),
+      cy: base - h * (0.35 + (i / 7) * 0.6),
+      rx: spread * rand(0.25, 0.45),
+      ry: h * rand(0.08, 0.14),
+    }));
+    const leaves = [];
+    for (const c of clusters) {
+      for (let i = 0; i < 160; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const r = Math.sqrt(Math.random());
+        leaves.push([c.cx + Math.cos(a) * c.rx * r, c.cy + Math.sin(a) * c.ry * r, rand(-2, 2), rand(9, 20)]);
+      }
+    }
+    const branches = clusters.map((c) => [c.cx, c.cy]);
+    const paint = (color, dx, dy) => {
+      g.strokeStyle = color;
+      g.lineWidth = Math.max(3, h * 0.016);
+      g.beginPath();
+      g.moveTo(x + dx, base + dy);
+      g.quadraticCurveTo(x + spread * 0.1 + dx, base - h * 0.5 + dy, x - spread * 0.05 + dx, base - h * 0.95 + dy);
+      g.stroke();
+      g.lineWidth = Math.max(1.2, h * 0.006);
+      for (const [bx, by] of branches) {
+        g.beginPath();
+        g.moveTo(x + spread * 0.04 + dx, by + h * 0.12 + dy);
+        g.quadraticCurveTo((x + bx) / 2 + dx, by + dy, bx + dx, by + dy);
+        g.stroke();
+      }
+      g.lineWidth = 1.6;
+      g.beginPath();
+      for (const [lx, ly, sx, sy] of leaves) {
+        g.moveTo(lx + dx, ly + dy);
+        g.lineTo(lx + sx + dx, ly + sy + dy);
+      }
+      g.stroke();
+    };
+    paint(P.tree[2], 1.2, -0.8);
+    paint(P.tree[0], 0, 0);
+  }
 
   function drawSky(t) {
     const { frame, horizon } = world;
@@ -724,18 +775,14 @@
     }
   }
 
-  const TRAIN = { cycle: 40000, arrive: 9000, dwell: 6000, depart: 6000, delay: 1500 };
+  const TRAIN = { cycle: 30000, run: 9000, delay: 1500 };
 
   function trainFront(t) {
     const tr = world.train;
     if (still.matches) return tr.stop;
     if (t < TRAIN.delay) return null;
     const p = (t - TRAIN.delay) % TRAIN.cycle;
-    if (p < TRAIN.arrive) return tr.stop * (1 - Math.pow(1 - p / TRAIN.arrive, 3));
-    if (p < TRAIN.arrive + TRAIN.dwell) return tr.stop;
-    const q = p - TRAIN.arrive - TRAIN.dwell;
-    if (q < TRAIN.depart) return tr.stop + (tr.end - tr.stop) * Math.pow(q / TRAIN.depart, 2);
-    return null;
+    return p < TRAIN.run ? tr.end * (p / TRAIN.run) : null;
   }
 
   function along(tr, s) {
@@ -1081,6 +1128,7 @@
     ctx.drawImage(world.midground, 0, 0, W, H);
     drawCars(t);
     drawTrain(t);
+    ctx.drawImage(world.trees, 0, 0, W, H);
     room(t);
   }
 
