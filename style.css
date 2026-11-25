@@ -644,7 +644,7 @@ button { font: inherit; color: inherit; }
   justify-content: center;
   align-items: center;
   gap: 8px;
-  max-width: 760px;
+  max-width: min(100%, 1040px);
 }
 
 .chips-label { font-family: var(--pixel); font-size: 20px; color: var(--dim); margin-right: 2px; }
