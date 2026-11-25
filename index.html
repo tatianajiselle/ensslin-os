@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Tatiana Ensslin</title>
+<meta name="description" content="Tatiana Ensslin: backend lead, agentic developer and computer engineer in the San Francisco Bay Area.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=VT323&family=Space+Mono:wght@400;700&family=Unbounded:wght@600;900&display=swap">
+<link rel="stylesheet" href="style.css?v=1795579741">
+</head>
+<body>
+
+<header class="topbar">
+  <a class="mark" href="#top">tatiana ensslin</a>
+  <nav aria-label="Page">
+    <button class="mode-toggle" id="mode-toggle" type="button" aria-label="Switch to day">&#9728; day</button>
+    <a href="#read">read instead</a>
+    <a href="img/Tatiana.Ensslin.Resume.pdf">resume</a>
+  </nav>
+</header>
+
+<section class="stage" id="top">
+  <canvas class="sky" aria-hidden="true"></canvas>
+
+  <div class="rig" id="rig">
+    <div class="monitor">
+      <div class="bezel">
+        <div class="screen ph-pink" id="screen">
+          <div class="term" id="term" role="log" aria-live="polite" aria-label="Terminal output"></div>
+          <div class="prompt-line" id="prompt-line" hidden>
+            <span class="ps1">tatiana@ensslin:~$</span>
+            <span class="typed" id="typed"></span><span class="caret"></span>
+          </div>
+          <input class="sink" id="sink" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" aria-label="Type a command, then press Enter">
+          <div class="glass" aria-hidden="true"></div>
+          <button class="wake" id="wake" type="button" hidden>click to power on</button>
+        </div>
+      </div>
+      <div class="chin">
+        <span class="badge">ensslin<b>/os</b></span>
+        <span class="chin-right">
+          <span class="led" id="power-led" aria-hidden="true"></span>
+          <button class="power" id="power" type="button" aria-label="Power off"></button>
+        </span>
+      </div>
+    </div>
+
+    <div class="case">
+      <div class="drive">
+        <span class="slot"></span>
+        <span class="led drive-led" id="drive-led" aria-hidden="true"></span>
+        <span class="drive-label">A:</span>
+      </div>
+      <div class="vents" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <svg class="sticker" viewBox="0 0 40 40" aria-hidden="true">
+        <circle cx="20" cy="20" r="19" fill="#ff71ce"/>
+        <ellipse cx="17" cy="25" rx="9" ry="7" fill="#fff"/>
+        <circle cx="24" cy="18" r="5" fill="#fff"/>
+        <ellipse cx="22" cy="9" rx="1.8" ry="5.5" fill="#fff" transform="rotate(-12 22 9)"/>
+        <ellipse cx="26" cy="9.5" rx="1.8" ry="5.5" fill="#fff" transform="rotate(10 26 9.5)"/>
+        <circle cx="25.5" cy="17.5" r="1" fill="#120a26"/>
+      </svg>
+    </div>
+
+    <div class="desk-row">
+      <div class="keyboard" id="keyboard" aria-hidden="true"></div>
+      <div class="disk-box" aria-label="Floppy disks">
+        <button class="disk" type="button" data-run="contact" style="--label:#3dffb0; --i:2" aria-label="Contact disk"><span class="shutter"></span><span class="disk-label">CONTACT</span></button>
+        <button class="disk" type="button" data-run="writing" style="--label:#2de2ff; --i:1" aria-label="Writing disk"><span class="shutter"></span><span class="disk-label">WRITING</span></button>
+        <button class="disk" type="button" data-run="resume" style="--label:#ffd36e; --i:0" aria-label="Resume disk"><span class="shutter"></span><span class="disk-label">RESUME</span></button>
+        <span class="box-front" aria-hidden="true">A:\DISKS</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="chips" aria-label="Quick commands">
+    <span class="chips-label">try</span>
+    <button type="button" data-run="whoami">whoami</button>
+    <button type="button" data-run="now">now</button>
+    <button type="button" data-run="projects">projects</button>
+    <button type="button" data-run="lucid run fib.lu">lucid run fib.lu</button>
+    <button type="button" data-run="community">community</button>
+    <button type="button" data-run="bunny">bunny</button>
+    <button type="button" data-run="music">music</button>
+    <button type="button" data-run="tracks">tracks</button>
+    <button type="button" data-run="help">help</button>
+  </div>
+</section>
+
+<section class="read" id="read">
+  <div class="read-inner">
+    <p class="eyebrow">the quiet version</p>
+    <div class="intro">
+      <img src="img/newMe.png" alt="Tatiana Ensslin smiling under pink light" width="1019" height="989">
+      <div>
+        <h1>Hi, I'm Tatiana.</h1>
+        <p class="sub">Backend engineer and tech lead with 9+ years building distributed systems. At Zillow I co-architected our messaging platform from 0 to 1, and right now I'm building an LLM-based risk engine on Jev. As an AI Champion, I also help people across the company learn to work with AI. San Francisco Bay Area, raised in New York.</p>
+      </div>
+    </div>
+
+    <h2>Work</h2>
+    <ul class="rows">
+      <li>
+        <div><h3>Senior Software Engineer, Zillow</h3><p>Co-architected Zillow's in-app messaging platform from launch to national scale: ~4.2M monthly users and ~1.3B requests a month at 128ms p95. Built an LLM merge-risk engine that auto-approves 30&ndash;45% of low-risk merge requests and cut median time-to-merge 76%.</p></div>
+        <span class="when">2022&ndash;now</span>
+      </li>
+      <li>
+        <div><h3>AI Champion, Zillow</h3><p>Teaching AI workshops across a ~100-engineer org and shipping a Claude skills plugin used org-wide. Power users went from 48% to 83%.</p></div>
+        <span class="when">2024&ndash;now</span>
+      </li>
+      <li>
+        <div><h3>Software Engineer, Zillow &amp; Trulia</h3><p>Kafka streaming pipelines, DynamoDB and Aurora data pipelines, and the trulia.com search box API and its GraphQL resolver.</p></div>
+        <span class="when">2018&ndash;22</span>
+      </li>
+      <li>
+        <div><h3>Junior Software Engineer, Moody's Analytics</h3><p>Spring Boot APIs, Angular UI modules, and Scala calculation engines on Spark.</p></div>
+        <span class="when">2017&ndash;18</span>
+      </li>
+      <li>
+        <div><h3>Syracuse University</h3><p>B.S. Computer Engineering, cum laude.</p></div>
+        <span class="when">2017</span>
+      </li>
+    </ul>
+
+    <h2>Projects</h2>
+    <ul class="rows">
+      <li>
+        <div><h3>Lucid</h3><p>A programming language that agents write and humans read. Compiles to native code through C.</p></div>
+        <span class="when">2026</span>
+      </li>
+      <li>
+        <div><h3>Merge risk engine</h3><p>LLM review for merge requests at Zillow, with its own evals for false approvals and escalations. Median first-commit-to-merge fell from 17 hours to 4.</p></div>
+        <span class="when">zillow</span>
+      </li>
+    </ul>
+
+    <h2>Talks</h2>
+    <ul class="rows">
+      <li><div><h3>Working with AI: Research-Plan-Implement + Spec-Driven Development</h3><p>Zillow AI Workshop</p></div><span class="when">2026</span></li>
+      <li><div><h3>AI-Assisted Development for Greenfield Projects</h3><p>Zillow AI Workshop</p></div><span class="when">2025</span></li>
+      <li><div><h3>Thriving in Remote Work</h3><p>Latinas in Tech</p></div><span class="when">2023</span></li>
+      <li><div><h3>Asking the Right Questions: Designing Distributed Streaming Apps</h3><p>Zillow Summit</p></div><span class="when">2021</span></li>
+      <li><div><h3>A GraphQL Journey: How Zillow Overcame Production Chaos</h3><p>Datadog DASH</p></div><span class="when">2019</span></li>
+    </ul>
+
+    <h2>Community</h2>
+    <ul class="rows">
+      <li><div><h3>Recruiting for Zillow Engineering</h3><p>Grace Hopper, Latinas in Tech and RenderATL.</p></div><span class="when">2019&ndash;24</span></li>
+      <li><div><h3>Writing on Medium</h3><p>Stories with 150K+ views. <a href="https://medium.com/@tatianaensslin">medium.com/@tatianaensslin</a></p></div><span class="when">150k+</span></li>
+      <li><div><h3>SaveABunny</h3><p>Volunteering with a Bay Area rabbit rescue.</p></div><span class="when">ongoing</span></li>
+      <li><div><h3>Zillow Women in Tech</h3><p>Committee lead.</p></div><span class="when">2019&ndash;21</span></li>
+      <li><div><h3>Hackbright Academy</h3><p>Mentor.</p></div><span class="when">2019</span></li>
+    </ul>
+
+    <h2>Contact</h2>
+    <p class="contact"><a href="mailto:tatianaensslin@gmail.com">tatianaensslin@gmail.com</a> &middot; <a href="https://www.linkedin.com/in/tatianaensslin">LinkedIn</a> &middot; <a href="https://medium.com/@tatianaensslin">Medium</a> &middot; <a href="https://github.com/tatianajiselle">GitHub</a></p>
+  </div>
+  <footer class="foot">&copy; 2026 Tatiana Ensslin</footer>
+</section>
+
+<script src="scene.js?v=1795579741"></script>
+<script src="tracks.js?v=1795579741"></script>
+<script src="synth.js?v=1795579741"></script>
+<script src="term.js?v=1795579741"></script>
+</body>
+</html>
