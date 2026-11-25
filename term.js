@@ -20,6 +20,8 @@
     saveabunny: "https://www.saveabunny.org/",
     soundshark: "https://soundshark.dev/",
     soundsharkCode: "https://github.com/tatianajiselle/soundshark",
+    dash: "https://www.youtube.com/watch?v=uaViyhJFjv0",
+    x: "https://x.com/tatianajiselle",
   };
   const FILES = ["now.log", "projects/", "community.txt", "offline.mp3", "contact.sh", "resume.pdf"];
   const THEMES = ["pink", "cyan", "mint", "amber"];
@@ -39,6 +41,14 @@
     const div = document.createElement("div");
     div.className = `line ${cls}`.trim();
     div.innerHTML = html;
+    if (!html.startsWith("<div")) {
+      const text = div.textContent;
+      const hang = text.match(/^ +/) || text.match(/^\S.*?  +(?=\S)/);
+      if (hang && hang[0].length <= 20) {
+        div.style.paddingLeft = `${hang[0].length}ch`;
+        div.style.textIndent = `-${hang[0].length}ch`;
+      }
+    }
     term.append(div);
     term.scrollTop = term.scrollHeight;
     return div;
@@ -182,27 +192,32 @@
       out("v2  <span class='c'>the sound graph</span>");
       out("    audio embeddings, vector search, a hybrid recommender");
       gap();
-      out("stack  <span class='d'>Python · asyncio · Postgres · graph ranking · Vite explorer</span>");
-      out(`site   ${link(LINKS.soundshark, "soundshark.dev")}`);
-      out(`code   ${link(LINKS.soundsharkCode, "github.com/tatianajiselle/soundshark")}`);
+      out("<span class='hi'>stack</span>     Python <span class='d'>·</span> asyncio <span class='d'>·</span> Postgres <span class='d'>·</span> graph ranking <span class='d'>·</span> Vite explorer");
+      if (window.SOUNDSHARK_KEY) {
+        out(`<span class='hi'>site</span>      ${link(LINKS.soundshark, "soundshark.dev")}  <span class='d'>private for now</span>`);
+        out(`<span class='hi'>password</span>  <span class='pw'>${window.SOUNDSHARK_KEY}</span>  <span class='d'>type it on the login page</span>`);
+      } else {
+        out(`<span class='hi'>site</span>      ${link(LINKS.soundshark, "soundshark.dev")}  <span class='d'>private for now · ask me for a key: contact</span>`);
+      }
+      out(`<span class='hi'>code</span>      ${link(LINKS.soundsharkCode, "github.com/tatianajiselle/soundshark")}`);
     },
 
     community() {
-      out("150K+", "g");
-      out(`views on my Medium stories. ${link(LINKS.medium, "read them")}`);
+      out("writing", "hi");
+      out(`<span class='g'>150K+</span> views on my Medium stories · ${link(LINKS.medium, "read them")}`);
       gap();
       out("talks", "hi");
-      out("2026  <span class='c'>Zillow AI Workshop</span> · Research-Plan-Implement + Spec-Driven Development");
-      out("2025  <span class='c'>Zillow AI Workshop</span> · AI-Assisted Development for Greenfield Projects");
-      out("2023  <span class='c'>Latinas in Tech</span> · Thriving in Remote Work");
-      out("2021  <span class='c'>Zillow Summit</span> · Designing Distributed Streaming Apps");
-      out("2019  <span class='c'>Datadog DASH</span> · A GraphQL Journey: How Zillow Overcame Production Chaos");
+      out("<span class='g'>2026</span>  <span class='c'>Zillow AI Workshop</span> · Research-Plan-Implement + Spec-Driven Development");
+      out("<span class='g'>2025</span>  <span class='c'>Zillow AI Workshop</span> · AI-Assisted Development for Greenfield Projects");
+      out("<span class='g'>2023</span>  <span class='c'>Latinas in Tech</span> · Thriving in Remote Work");
+      out("<span class='g'>2021</span>  <span class='c'>Zillow Summit</span> · Designing Distributed Streaming Apps");
+      out(`<span class='g'>2019</span>  <span class='c'>Datadog DASH</span> · A GraphQL Journey: How Zillow Overcame Production Chaos · ${link(LINKS.dash, "watch")}`);
       gap();
       out("giving back", "hi");
-      out("recruiting  <span class='c'>Grace Hopper, Latinas in Tech, RenderATL</span>");
-      out("ongoing     <span class='c'>volunteering with SaveABunny</span>");
-      out("2019-21     <span class='c'>Zillow Women in Tech, committee lead</span>");
-      out("2019        <span class='c'>mentor, Hackbright Academy</span>");
+      out("<span class='g'>recruiting</span>  <span class='c'>Grace Hopper, Latinas in Tech, RenderATL</span>");
+      out("<span class='g'>ongoing</span>     <span class='c'>volunteering with SaveABunny</span>");
+      out("<span class='g'>2019-21</span>     <span class='c'>Zillow Women in Tech, committee lead</span>");
+      out("<span class='g'>2019</span>        <span class='c'>mentor, Hackbright Academy</span>");
     },
 
     async writing() {
@@ -235,6 +250,7 @@
       out(`linkedin  ${link(LINKS.linkedin, "in/tatianaensslin")}`);
       out(`medium    ${link(LINKS.medium, "@tatianaensslin")}`);
       out(`github    ${link(LINKS.github, "tatianajiselle")}`);
+      out(`x         ${link(LINKS.x, "@tatianajiselle")}`);
       gap();
       out("Talks, mentoring, interesting backend problems, or rabbits. My inbox is open.", "c");
     },

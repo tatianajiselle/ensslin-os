@@ -204,6 +204,7 @@ button { font: inherit; color: inherit; }
 .term .g { color: var(--gold); }
 .term .d { opacity: 0.6; }
 .term .err { color: #ff6b8b; }
+.term .pw { padding: 0 0.45em; border-radius: 3px; background: #ff71ce; color: #1a0f30; box-shadow: 0 0 12px rgba(255, 113, 206, 0.55); }
 .term a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }
 .term .ok { color: var(--mint); }
 
@@ -571,19 +572,19 @@ body.playing .term .vinyl-arm { transform: rotate(28deg); }
 }
 
 .disk-box {
-  --disk: clamp(38px, calc(var(--mw) / 12.5), 56px);
+  --disk: clamp(46px, calc(var(--mw) / 9.5), 74px);
   position: absolute;
   top: 4px;
-  right: -1%;
-  width: calc(var(--disk) * 1.5);
-  height: calc(var(--disk) * 1.85);
+  right: -9%;
+  width: calc(var(--disk) * 1.75);
+  height: calc(var(--disk) * 2.2);
 }
 
 .disk {
   position: absolute;
   left: calc(var(--i) * var(--disk) * 0.24);
   bottom: calc(var(--disk) * 0.12 + var(--i) * var(--disk) * 0.34);
-  z-index: calc(3 - var(--i));
+  z-index: calc(4 - var(--i));
   width: var(--disk);
   aspect-ratio: 1;
   padding: 0;
@@ -778,7 +779,7 @@ body.playing .term .vinyl-arm { transform: rotate(28deg); }
   .stage { min-height: auto; padding-block: 72px 36px; }
   .desk-row { display: flex; justify-content: center; }
   .keyboard { display: none; }
-  .disk-box { position: relative; top: 0; right: auto; --disk: 54px; }
+  .disk-box { position: relative; top: 0; right: auto; --disk: 64px; }
   .screen { font-size: 12px; aspect-ratio: 4 / 3; }
   .term .vinyl { display: none; }
   .case { width: 104%; }
@@ -836,3 +837,10 @@ body[data-mode="day"] .chips button:hover { color: #fff; }
 body[data-mode="day"] .mark { color: var(--ink); }
 body[data-mode="day"] .disk { background: linear-gradient(160deg, #ffffff 0%, #e6dcff 55%, #c3b2f2 100%); }
 body[data-mode="day"] .box-front { background: linear-gradient(180deg, rgba(255, 255, 255, 0.55), rgba(150, 230, 215, 0.85)); border-color: rgba(43, 134, 118, 0.5); color: #1f5f55; }
+
+.disk-label-long {
+  left: 5%;
+  right: 5%;
+  font-size: clamp(10px, calc(var(--disk) / 5.2), 14px);
+  letter-spacing: 0;
+}

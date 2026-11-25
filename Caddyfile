@@ -1,0 +1,16 @@
+{$SITE_ADDRESS:http://localhost:8080} {
+	encode zstd gzip
+
+	handle /key.js {
+		header Content-Type "text/javascript; charset=utf-8"
+		header Cache-Control "no-store"
+		respond `window.SOUNDSHARK_KEY = "{$SOUNDSHARK_KEY}";`
+	}
+
+	handle {
+		root * {$SITE_ROOT:/srv/site}
+		file_server {
+			hide .git .gitignore .DS_Store Caddyfile
+		}
+	}
+}
