@@ -203,6 +203,7 @@ button { font: inherit; color: inherit; }
 .term .m { color: var(--mint); }
 .term .g { color: var(--gold); }
 .term .d { opacity: 0.6; }
+.term .nw { white-space: nowrap; }
 .term .err { color: #ff6b8b; }
 .term .pw { padding: 0 0.45em; border-radius: 3px; background: #ff71ce; color: #1a0f30; box-shadow: 0 0 12px rgba(255, 113, 206, 0.55); }
 .term a { color: var(--cyan); text-decoration: underline; text-underline-offset: 3px; }

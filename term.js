@@ -133,6 +133,8 @@
         ["music", "speaker on / off"],
         ["tracks", "techno playlist"],
         ["next / prev", "skip tracks"],
+        ["pause / play", "hold the beat"],
+        ["vol 0-10", "louder, quieter"],
         ["theme", "change phosphor"],
         ["sky", "day or night"],
         ["bunny", "important"],
@@ -297,7 +299,7 @@
       if (!window.synthwave) return out("music: audio not available", "err");
       const playing = window.synthwave.toggle();
       if (playing) nowPlaying();
-      else out("♪ paused. type music to resume", "d");
+      else out(`♪ paused · ${cmd("play")} to resume`, "d");
     },
 
     tracks() {
@@ -311,7 +313,7 @@
         out(`${mark} ${String(i + 1).padStart(2)}  <span class='c'>${esc(tr.name).padEnd(width)}</span>${esc(tr.style)}${tr.bpm ? ` <span class='d'>${tr.bpm} bpm</span>` : ""}`);
       });
       gap();
-      out(`play 1-${list.length}, next, prev, stop`, "d");
+      out(`play 1-${list.length} · ${controls("pause", "stop", "next", "prev", "shuffle", "repeat", "vol")}`);
     },
 
     next() {
@@ -326,10 +328,72 @@
       nowPlaying();
     },
 
+    pause() {
+      if (!window.synthwave) return out("pause: audio not available", "err");
+      if (!window.synthwave.playing) return out(`♪ already paused · ${cmd("play")} to resume`, "d");
+      window.synthwave.pause();
+      out(`♪ paused · ${cmd("play")} to resume`, "d");
+    },
+
     stop() {
       if (!window.synthwave) return out("stop: audio not available", "err");
       window.synthwave.stop();
-      out("♪ stopped", "d");
+      out(`♪ stopped · ${cmd("play")} starts the track over`, "d");
+    },
+
+    vol(args) {
+      if (!window.synthwave) return out("vol: audio not available", "err");
+      const arg = (args[0] || "").toLowerCase();
+      const current = Math.round(window.synthwave.volume * 10);
+      let next = current;
+      if (arg === "up" || arg === "+") next = current + 1;
+      else if (arg === "down" || arg === "-") next = current - 1;
+      else if (arg) next = Number(arg);
+      if (Number.isNaN(next)) return out("vol: pick 0-10, up or down", "err");
+      next = Math.max(0, Math.min(10, Math.round(next)));
+      if (arg) window.synthwave.setVolume(next / 10);
+      const muted = window.synthwave.muted ? ` <span class='d'>(muted · ${cmd("unmute")})</span>` : "";
+      out(`♪ volume <span class='c'>${"▮".repeat(next)}</span><span class='d'>${"▯".repeat(10 - next)}</span> ${next}/10${muted}`, "m");
+      if (!arg) out(controls("vol up", "vol down", "vol 5", "mute"));
+    },
+
+    louder() {
+      return commands.vol(["up"]);
+    },
+
+    quieter() {
+      return commands.vol(["down"]);
+    },
+
+    mute() {
+      if (!window.synthwave) return out("mute: audio not available", "err");
+      window.synthwave.setMuted(true);
+      out(`♪ muted · ${cmd("unmute")} to bring it back`, "d");
+    },
+
+    unmute() {
+      if (!window.synthwave) return out("unmute: audio not available", "err");
+      window.synthwave.setMuted(false);
+      out(`♪ sound back on at ${Math.round(window.synthwave.volume * 10)}/10`, "m");
+    },
+
+    shuffle() {
+      if (!window.synthwave) return out("shuffle: audio not available", "err");
+      window.synthwave.shuffle();
+      nowPlaying();
+    },
+
+    repeat() {
+      if (!window.synthwave) return out("repeat: audio not available", "err");
+      const on = window.synthwave.setRepeat(!window.synthwave.repeat);
+      const name = esc(window.synthwave.now.name);
+      out(on ? `♪ repeat on · <span class='c'>${name}</span> will loop` : "♪ repeat off · the playlist moves on", "m");
+    },
+
+    np() {
+      if (!window.synthwave) return out("np: audio not available", "err");
+      if (!window.synthwave.playing) return out(`♪ nothing playing · ${cmd("music")} to start`, "d");
+      nowPlaying();
     },
 
     theme(args) {
@@ -382,8 +446,12 @@
         if (!window.synthwave.playing) window.synthwave.play(0);
         return nowPlaying();
       }
+      if (!arg) {
+        if (!window.synthwave.playing) window.synthwave.play();
+        return nowPlaying();
+      }
       const list = window.synthwave.tracks;
-      let index = arg ? Number(arg) - 1 : 0;
+      let index = Number(arg) - 1;
       if (Number.isNaN(index)) index = list.findIndex((tr) => tr.name.toLowerCase().includes(arg));
       if (index < 0 || index >= list.length) return out(`play: pick 1-${list.length}, or type tracks`, "err");
       window.synthwave.play(index);
@@ -437,12 +505,21 @@
     },
   };
 
-  const aliases = { shark: "soundshark", skip: "next", back: "prev", pause: "stop", playlist: "tracks", techno: "tracks", night: "moon", day: "sun", dusk: "sun", light: "sun", dark: "moon", hello: "hi", work: "now", about: "whoami", exit: "shutdown", emacs: "vim", fetch: "tfetch", neofetch: "tfetch", hobbies: "offline", email: "contact", talks: "community", cd: "ls" };
+  const aliases = { shark: "soundshark", skip: "next", back: "prev", resume: "play", volume: "vol", softer: "quieter", nowplaying: "np", song: "np", playing: "np", loop: "repeat", random: "shuffle", playlist: "tracks", techno: "tracks", night: "moon", day: "sun", dusk: "sun", light: "sun", dark: "moon", hello: "hi", work: "now", about: "whoami", exit: "shutdown", emacs: "vim", fetch: "tfetch", neofetch: "tfetch", hobbies: "offline", email: "contact", talks: "community", cd: "ls" };
 
   function nowPlaying() {
     const n = window.synthwave.now;
     const meta = [n.style, n.bpm ? `${n.bpm} bpm` : ""].filter(Boolean).join(" · ");
-    out(`♪ now playing <span class='c'>${esc(n.name)}</span>  ${esc(meta)} <span class='d'>(next, prev, tracks)</span>`, "m");
+    out(`♪ now playing <span class='c'>${esc(n.name)}</span>  ${esc(meta)}`, "m");
+    out(`${controls("pause", "next", "prev", "shuffle", "vol", "tracks")}${window.synthwave.repeat ? " <span class='d nw'>· repeat on</span>" : ""}`);
+  }
+
+  function cmd(name) {
+    return `<button type="button" class="cmd-link" data-cmd="${name}">${name}</button>`;
+  }
+
+  function controls(...names) {
+    return names.map(cmd).join(" · ");
   }
 
   async function run(raw) {

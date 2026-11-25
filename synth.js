@@ -6,6 +6,59 @@
   let echo = null;
   let echoFeedback = null;
   let noise = null;
+  const saved = (() => {
+    try {
+      return localStorage.getItem("ensslin-volume");
+    } catch {
+      return null;
+    }
+  })();
+  const mix = { volume: saved === null ? 0.8 : Math.min(1, Math.max(0, Number(saved) || 0)), muted: false, repeat: false };
+  const loudness = () => (mix.muted ? 0 : mix.volume);
+
+  function addControls(api, apply) {
+    Object.defineProperties(api, {
+      volume: { get: () => mix.volume },
+      muted: { get: () => mix.muted },
+      repeat: { get: () => mix.repeat },
+    });
+    api.setVolume = (v) => {
+      mix.volume = Math.min(1, Math.max(0, v));
+      mix.muted = false;
+      try {
+        localStorage.setItem("ensslin-volume", String(mix.volume));
+      } catch {}
+      apply();
+      return mix.volume;
+    };
+    api.setMuted = (m) => {
+      mix.muted = m;
+      apply();
+      return m;
+    };
+    api.setRepeat = (r) => (mix.repeat = r);
+    api.shuffle = () => {
+      const n = api.tracks.length;
+      let i = api.now.index;
+      while (n > 1 && i === api.now.index) i = Math.floor(Math.random() * n);
+      return api.play(i);
+    };
+    if ("mediaSession" in navigator) {
+      const actions = { play: () => api.play(), pause: () => api.pause(), stop: () => api.stop(), nexttrack: () => api.next(), previoustrack: () => api.prev() };
+      for (const [action, fn] of Object.entries(actions)) {
+        try {
+          navigator.mediaSession.setActionHandler(action, fn);
+        } catch {}
+      }
+    }
+    return api;
+  }
+
+  function showSession(now) {
+    if (!("mediaSession" in navigator)) return;
+    navigator.mediaSession.playbackState = now.playing ? "playing" : "paused";
+    if (window.MediaMetadata) navigator.mediaSession.metadata = new MediaMetadata({ title: now.name, artist: now.style, album: "ensslin/os" });
+  }
 
   function init() {
     ac = new (window.AudioContext || window.webkitAudioContext)();
@@ -200,6 +253,7 @@
   }
 
   function announce() {
+    showSession(window.synthwave.now);
     document.dispatchEvent(new CustomEvent("track", { detail: window.synthwave.now }));
   }
 
@@ -209,6 +263,7 @@
     audio.preload = "auto";
     let analyser = null;
     let level = null;
+    let volume = null;
     let bins = null;
     let slow = 0;
     let env = 0;
@@ -223,12 +278,21 @@
       analyser.smoothingTimeConstant = 0.6;
       bins = new Uint8Array(analyser.frequencyBinCount);
       level = ac.createGain();
-      ac.createMediaElementSource(audio).connect(level).connect(analyser).connect(ac.destination);
+      volume = ac.createGain();
+      volume.gain.value = loudness();
+      ac.createMediaElementSource(audio).connect(level).connect(analyser).connect(volume).connect(ac.destination);
     };
 
-    const announceFile = () => document.dispatchEvent(new CustomEvent("track", { detail: window.synthwave.now }));
+    const announceFile = () => {
+      showSession(window.synthwave.now);
+      document.dispatchEvent(new CustomEvent("track", { detail: window.synthwave.now }));
+    };
 
-    audio.addEventListener("ended", () => window.synthwave.next());
+    audio.addEventListener("ended", () => {
+      if (!mix.repeat) return window.synthwave.next();
+      audio.currentTime = 0;
+      audio.play();
+    });
 
     window.synthwave = {
       tracks: files.map((_, i) => info(i)),
@@ -276,15 +340,20 @@
         announceFile();
         return this.now;
       },
-      stop() {
+      pause() {
         audio.pause();
         fileState.on = false;
         document.body.classList.remove("playing");
         announceFile();
         return this.now;
       },
+      stop() {
+        this.pause();
+        audio.currentTime = 0;
+        return this.now;
+      },
       toggle() {
-        if (fileState.on) this.stop();
+        if (fileState.on) this.pause();
         else this.play();
         return fileState.on;
       },
@@ -297,6 +366,7 @@
         return this.play(fileState.track - 1);
       },
     };
+    addControls(window.synthwave, () => volume && volume.gain.setTargetAtTime(loudness(), ac.currentTime, 0.05));
     return;
   }
 
@@ -322,7 +392,7 @@
       document.body.classList.add("playing");
       await ac.resume();
       master.gain.cancelScheduledValues(ac.currentTime);
-      master.gain.setTargetAtTime(0.55, ac.currentTime, 0.3);
+      master.gain.setTargetAtTime(0.55 * loudness(), ac.currentTime, 0.3);
       begin();
       announce();
       return this.now;
@@ -339,6 +409,9 @@
       announce();
       return this.now;
     },
+    pause() {
+      return this.stop();
+    },
     toggle() {
       if (state.on) this.stop();
       else this.play();
@@ -351,4 +424,5 @@
       return this.play(state.track - 1);
     },
   };
+  addControls(window.synthwave, () => ac && state.on && master.gain.setTargetAtTime(0.55 * loudness(), ac.currentTime, 0.05));
 })();
