@@ -1,6 +1,17 @@
 {$SITE_ADDRESS:http://localhost:8080} {
 	encode zstd gzip
 
+	@audio_direct {
+		path /audio/*
+		not {
+			header Sec-Fetch-Dest audio
+			header Sec-Fetch-Site same-origin
+		}
+	}
+	handle @audio_direct {
+		respond 403
+	}
+
 	handle /key.js {
 		header Content-Type "text/javascript; charset=utf-8"
 		header Cache-Control "no-store"
