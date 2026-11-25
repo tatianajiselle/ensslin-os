@@ -20,7 +20,7 @@
       rim: "rgba(255, 150, 205, 0.6)",
       ground: ["#2b1452", "#0d061c"], rows: ["#2a1450", "#1d0d3a", "#130828"], rowRim: "rgba(255, 150, 200, 0.35)",
       fw: ["#1a0c36", "rgba(255, 140, 200, 0.6)", "#170b30"],
-      bridge: "#24134a", bayLights: 1, deckLights: "rgba(255, 211, 110, 0.85)",
+      bridge: "#24134a", hangers: ["235, 245, 255", 0.18, 0.75], deckLights: "rgba(255, 211, 110, 0.85)",
       tree: ["#0c0619", "rgba(255, 113, 206, 0.5)", "rgba(255, 140, 210, 0.22)"],
       wood: "#0b0519", frameRim: "rgba(255, 113, 206, 0.28)",
       sill: ["#2b1453", "#150a2c"], sillLine: "rgba(255, 140, 210, 0.6)",
@@ -41,7 +41,7 @@
       rim: "rgba(255, 245, 250, 0.85)",
       ground: ["#a48ad2", "#6f56a2"], rows: ["#9781c9", "#8169b6", "#6a539f"], rowRim: "rgba(255, 245, 250, 0.6)",
       fw: ["#5c4892", "rgba(255, 255, 255, 0.7)", "#6a56a0"],
-      bridge: "#6c5fa6", bayLights: 0.25, deckLights: "rgba(255, 255, 255, 0.5)",
+      bridge: "#6c5fa6", hangers: ["96, 82, 160", 0.5, 0.25], deckLights: "rgba(255, 255, 255, 0.5)",
       tree: ["#3f2f6c", "rgba(255, 255, 255, 0.45)", "rgba(255, 255, 255, 0.3)"],
       wood: "#cdbdf0", frameRim: "rgba(255, 255, 255, 0.8)",
       sill: ["#efe6ff", "#d3c3f5"], sillLine: "rgba(255, 255, 255, 0.95)",
@@ -288,6 +288,13 @@
     }
     world.trees = trees.c;
 
+    const treeH = Math.min(d * 1.05 + sfH * 0.2, U * 0.46);
+    world.bird = {
+      tree: { x: right.b - rw * 0.06, spread: rw * 0.22, top: frame.bottom + 6 - treeH * 0.92, bottom: frame.bottom + 6 - treeH * 0.4 },
+      window: { x: monRight + (frame.right - monRight) * 0.3, y: frame.top + (horizon - frame.top) * 0.62 },
+      size: Math.max(11, U * 0.017),
+    };
+    bird.ready = false;
   }
 
   function tower(g, b, base) {
@@ -600,8 +607,8 @@
       for (let i = 1; i < steps; i++) {
         const [x, y] = at(cv, i / steps);
         const wave = still.matches ? 0.5 : Math.pow(0.5 + 0.5 * Math.sin(x * 0.045 - t / 260), 6);
-        const a = (0.18 + 0.75 * wave) * P.bayLights;
-        ctx.strokeStyle = `rgba(235, 245, 255, ${a})`;
+        const [rgb, base, glow] = P.hangers;
+        ctx.strokeStyle = `rgba(${rgb}, ${base + glow * wave})`;
         ctx.beginPath();
         ctx.moveTo(x, y);
         ctx.lineTo(x, deckY);
@@ -771,6 +778,123 @@
       ctx.fillStyle = c.dir > 0 ? "rgba(255, 250, 230, 0.95)" : "rgba(255, 70, 100, 0.95)";
       ctx.fillRect(x, y + (c.dir > 0 ? -fw.lw * 0.25 : fw.lw * 0.05), 3, 1.6);
     }
+  }
+
+  const bird = { ready: false };
+
+  function treeSpot() {
+    const T = world.bird.tree;
+    return { x: T.x - T.spread * rand(0.35, 1), y: rand(T.top, T.bottom), k: 1, face: 1 };
+  }
+
+  function birdLeg(t, to, dur, hover) {
+    bird.from = { x: bird.x, y: bird.y, k: bird.k };
+    bird.to = to;
+    bird.start = t;
+    bird.dur = dur;
+    bird.until = t + dur + hover;
+    if (Math.abs(to.x - bird.x) > 2) bird.face = to.x > bird.x ? 1 : -1;
+    bird.rest = to.face;
+  }
+
+  function birdNext(t) {
+    if (bird.mode === "tree" && --bird.hops <= 0) {
+      bird.mode = "window";
+      const Wn = world.bird.window;
+      birdLeg(t, { x: Wn.x + rand(-12, 12), y: Wn.y + rand(-10, 10), k: 2.4, face: -1 }, rand(900, 1200), rand(3200, 4500));
+    } else {
+      if (bird.mode === "window") bird.hops = Math.round(rand(5, 9));
+      bird.mode = "tree";
+      const back = bird.k > 1.5;
+      birdLeg(t, treeSpot(), back ? rand(850, 1100) : rand(280, 520), rand(600, 1900));
+    }
+  }
+
+  function updateBird(t) {
+    if (!bird.ready) {
+      Object.assign(bird, treeSpot(), { ready: true, mode: "tree", hops: 3, face: 1 });
+      birdLeg(t, treeSpot(), 400, 900);
+    }
+    if (t >= bird.until) birdNext(t);
+    const e = Math.min(1, (t - bird.start) / bird.dur);
+    const ease = e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2;
+    const lift = Math.sin(Math.PI * e) * Math.min(30, Math.hypot(bird.to.x - bird.from.x, bird.to.y - bird.from.y) * 0.15);
+    bird.x = bird.from.x + (bird.to.x - bird.from.x) * ease;
+    bird.y = bird.from.y + (bird.to.y - bird.from.y) * ease - lift;
+    bird.k = bird.from.k + (bird.to.k - bird.from.k) * ease;
+    if (e >= 1) {
+      bird.face = bird.rest;
+      bird.x += Math.sin(t / 170) * 1.2 * bird.k;
+      bird.y += Math.cos(t / 240) * 0.9 * bird.k;
+    }
+    return e >= 1;
+  }
+
+  function drawBird(t) {
+    if (mode !== "day" || world.narrow || !world.bird) return;
+    const hovering = still.matches ? true : updateBird(t);
+    if (still.matches && !bird.ready) Object.assign(bird, treeSpot(), { ready: true });
+    const L = world.bird.size * (bird.k || 1);
+    ctx.save();
+    ctx.translate(bird.x, bird.y);
+    ctx.scale(bird.face || 1, 1);
+    ctx.rotate(hovering ? -0.45 : -0.15);
+    const beat = still.matches ? 0.5 : Math.sin(t * 0.11);
+    ctx.fillStyle = "rgba(235, 228, 255, 0.32)";
+    for (const sweep of [beat, -beat * 0.6]) {
+      ctx.save();
+      ctx.translate(-L * 0.02, -L * 0.1);
+      ctx.rotate(-1.2 + sweep * 0.9);
+      ctx.beginPath();
+      ctx.ellipse(L * 0.32, 0, L * 0.4, L * 0.1, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+    ctx.fillStyle = "#2f6b4f";
+    ctx.beginPath();
+    ctx.moveTo(-L * 0.3, -L * 0.02);
+    ctx.lineTo(-L * 0.66, L * 0.12);
+    ctx.lineTo(-L * 0.58, L * 0.01);
+    ctx.lineTo(-L * 0.66, -L * 0.1);
+    ctx.closePath();
+    ctx.fill();
+    const body = ctx.createLinearGradient(0, -L * 0.2, 0, L * 0.2);
+    body.addColorStop(0, "#3f9a63");
+    body.addColorStop(0.55, "#5fae7a");
+    body.addColorStop(1, "#b9c4b8");
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    ctx.ellipse(0, L * 0.01, L * 0.36, L * 0.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "rgba(40, 30, 70, 0.35)";
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+    const shine = 0.55 + 0.45 * Math.sin(t / 700 + bird.x * 0.02);
+    const rose = `rgb(${Math.round(150 + 105 * shine)}, ${Math.round(20 + 40 * shine)}, ${Math.round(90 + 60 * shine)})`;
+    ctx.fillStyle = rose;
+    ctx.beginPath();
+    ctx.arc(L * 0.36, -L * 0.08, L * 0.19, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(L * 0.22, L * 0.02);
+    ctx.quadraticCurveTo(L * 0.36, L * 0.24, L * 0.54, L * 0.04);
+    ctx.lineTo(L * 0.48, -L * 0.04);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = "#1c1426";
+    ctx.beginPath();
+    ctx.arc(L * 0.43, -L * 0.11, Math.max(1, L * 0.045), 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(L * 0.445, -L * 0.135, Math.max(0.7, L * 0.02), Math.max(0.7, L * 0.02));
+    ctx.strokeStyle = "#241a30";
+    ctx.lineWidth = Math.max(0.9, L * 0.035);
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(L * 0.53, -L * 0.07);
+    ctx.lineTo(L * 0.95, -L * 0.03);
+    ctx.stroke();
+    ctx.restore();
   }
 
   const TRAIN = { cycle: 30000, run: 9000, delay: 1500 };
@@ -1138,6 +1262,7 @@
     drawCars(t);
     drawTrain(t);
     ctx.drawImage(world.trees, 0, 0, W, H);
+    drawBird(t);
     room(t);
   }
 
