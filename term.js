@@ -52,19 +52,61 @@
     driveLed.classList.remove("on");
   }
 
-  function sunArt() {
-    return [
-      "      ▄▄██████▄▄      ",
-      "   ▄████████████▄▄   ",
-      "  ██████████████████  ",
-      " ████████████████████ ",
-      " ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀ ",
-      " ████████████████████ ",
-      "  ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀  ",
-      "   ▀████████████▀   ",
-      "      ▀▀▀▀▀▀▀▀      ",
-    ].join("\n");
+  let vinylCache = null;
+  function vinylImage() {
+    if (vinylCache) return vinylCache;
+    const S = 240;
+    const c = document.createElement("canvas");
+    c.width = S;
+    c.height = S;
+    const g = c.getContext("2d");
+    const m = S / 2;
+    const disc = g.createRadialGradient(m, m, 10, m, m, 118);
+    disc.addColorStop(0, "#221a30");
+    disc.addColorStop(1, "#0d0912");
+    g.fillStyle = disc;
+    g.beginPath();
+    g.arc(m, m, 118, 0, Math.PI * 2);
+    g.fill();
+    g.lineWidth = 1;
+    for (let r = 46; r < 114; r += 2.6) {
+      g.strokeStyle = `rgba(200, 170, 255, ${r % 13 < 2.6 ? 0.16 : 0.06})`;
+      g.beginPath();
+      g.arc(m, m, r, 0, Math.PI * 2);
+      g.stroke();
+    }
+    g.strokeStyle = "rgba(255, 113, 206, 0.8)";
+    g.lineWidth = 2;
+    g.beginPath();
+    g.arc(m, m, 117, 0, Math.PI * 2);
+    g.stroke();
+    const label = g.createLinearGradient(m - 40, m - 40, m + 40, m + 40);
+    label.addColorStop(0, "#ff4fa8");
+    label.addColorStop(1, "#b967ff");
+    g.fillStyle = label;
+    g.beginPath();
+    g.arc(m, m, 40, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = "rgba(255, 255, 255, 0.25)";
+    g.beginPath();
+    g.arc(m, m, 40, Math.PI * 1.05, Math.PI * 1.45);
+    g.lineTo(m, m);
+    g.fill();
+    g.fillStyle = "#1a0f30";
+    g.textAlign = "center";
+    g.font = "700 11px 'Space Mono', monospace";
+    g.fillText("ensslin/os", m, m - 11);
+    g.font = "400 8px 'Space Mono', monospace";
+    g.fillText("side A · 33⅓", m, m + 20);
+    g.fillStyle = "#0d0912";
+    g.beginPath();
+    g.arc(m, m, 4, 0, Math.PI * 2);
+    g.fill();
+    vinylCache = c.toDataURL();
+    return vinylCache;
   }
+
+  const vinylMarkup = () => `<div class="vinyl"><img class="vinyl-disc" src="${vinylImage()}" alt="A vinyl record with a pink ensslin/os label" width="240" height="240"><span class="vinyl-sheen"></span><svg class="vinyl-arm" viewBox="0 0 120 100" aria-hidden="true"><circle cx="112" cy="10" r="6" fill="#2a1d44" stroke="#ff71ce" stroke-width="1.2"/><path d="M112 10 L112 68 L106 78" fill="none" stroke="#e6defa" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><rect x="101" y="76" width="9" height="5" rx="1.2" transform="rotate(-30 105 78)" fill="#e6defa"/><circle cx="112" cy="10" r="2" fill="#e6defa"/></svg></div>`;
 
   const commands = {
     help() {
@@ -227,11 +269,12 @@
         "<span class='c'>shell</span>     zsh",
         "<span class='c'>uptime</span>    since 2017 (syracuse ce)",
         "<span class='c'>location</span>  sf bay area",
-        "<span class='c'>stack</span>     java, kafka, k8s",
+        "<span class='c'>stack</span>     java, postgres, k8s",
+        "<span class='c'>ai</span>        llm evals, agents, mcp",
         "<span class='c'>hobbies</span>   climbing, hiking, techno",
       ];
       const swatches = ["#ff71ce", "#ff3d9a", "#ff8a5c", "#ffd36e", "#3dffb0", "#2de2ff", "#b967ff", "#f2e9ff"];
-      out(`<div class="fetch"><pre class="sun-art">${sunArt()}</pre><div>${info.map((l) => `<div>${l}</div>`).join("")}<div class="swatches">${swatches.map((c) => `<i style="background:${c}"></i>`).join("")}</div></div></div>`);
+      out(`<div class="fetch">${vinylMarkup()}<div>${info.map((l) => `<div>${l}</div>`).join("")}<div class="swatches">${swatches.map((c) => `<i style="background:${c}"></i>`).join("")}</div></div></div>`);
     },
 
     music() {

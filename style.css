@@ -238,18 +238,51 @@ button { font: inherit; color: inherit; }
   align-items: center;
 }
 
-.term .sun-art {
-  margin: 0;
-  font-family: var(--block);
-  font-size: 0.78em;
-  line-height: 1.02;
-  background: linear-gradient(180deg, var(--gold), #ff8a5c 50%, var(--hot));
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  text-shadow: none;
-  filter: drop-shadow(0 0 6px rgba(255, 61, 154, 0.6));
+.term .vinyl {
+  position: relative;
+  width: 11.4em;
+  height: 9.5em;
+  flex: none;
 }
+
+.term .vinyl-disc {
+  width: 9.5em;
+  height: 9.5em;
+  border-radius: 50%;
+  filter: drop-shadow(0 0 10px rgba(255, 61, 154, 0.45));
+  animation: spin 1.8s linear infinite;
+  animation-play-state: paused;
+}
+
+body.playing .term .vinyl-disc { animation-play-state: running; }
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.term .vinyl-sheen {
+  position: absolute;
+  left: 0.15em;
+  top: 0.15em;
+  width: 9.2em;
+  height: 9.2em;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(from 20deg, transparent 0 8%, rgba(255, 255, 255, 0.1) 13%, transparent 19% 58%, rgba(255, 255, 255, 0.07) 63%, transparent 69%);
+  -webkit-mask: radial-gradient(circle, transparent 0 34%, #000 35%);
+  mask: radial-gradient(circle, transparent 0 34%, #000 35%);
+}
+
+.term .vinyl-arm {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform-origin: 93.3% 10%;
+  transform: rotate(0deg);
+  transition: transform 0.9s cubic-bezier(.3,.7,.3,1);
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5));
+}
+
+body.playing .term .vinyl-arm { transform: rotate(28deg); }
 
 .term .swatches { display: flex; gap: 0; margin-top: 0.3em; }
 .term .swatches i { width: 1.4em; height: 0.8em; display: block; }
@@ -741,13 +774,13 @@ button { font: inherit; color: inherit; }
   .keyboard { display: none; }
   .disk-box { position: relative; top: 0; right: auto; --disk: 54px; }
   .screen { font-size: 12px; aspect-ratio: 4 / 3; }
-  .term .sun-art { display: none; }
+  .term .vinyl { display: none; }
   .case { width: 104%; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   html { scroll-behavior: auto; }
-  .glass, .caret, .disk, .screen.booting .term, .screen.powering-off .term, .screen.powering-off .prompt-line { animation: none; }
+  .glass, .caret, .disk, .term .vinyl-disc, .screen.booting .term, .screen.powering-off .term, .screen.powering-off .prompt-line { animation: none; }
 }
 
 body[data-mode="day"] {
