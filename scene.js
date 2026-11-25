@@ -293,6 +293,7 @@
       tree: { x: right.b - rw * 0.06, spread: rw * 0.22, top: frame.bottom + 6 - treeH * 0.92, bottom: frame.bottom + 6 - treeH * 0.4 },
       window: { x: monRight + (frame.right - monRight) * 0.3, y: frame.top + (horizon - frame.top) * 0.62 },
       size: Math.max(11, U * 0.017),
+      out: { x: frame.right + 40, top: frame.top, bottom: frame.top + (horizon - frame.top) * 0.45 },
     };
     bird.ready = false;
   }
@@ -797,25 +798,40 @@
     bird.rest = to.face;
   }
 
+  function offscreen() {
+    const O = world.bird.out;
+    return { x: O.x, y: rand(O.top, O.bottom), k: 1.3, face: 1 };
+  }
+
   function birdNext(t) {
-    if (bird.mode === "tree" && --bird.hops <= 0) {
+    if (bird.mode === "away") {
+      Object.assign(bird, offscreen(), { mode: "arrive", hops: Math.round(rand(3, 4)), visited: false });
+      birdLeg(t, treeSpot(), rand(1400, 1800), rand(800, 1500));
+    } else if (bird.mode === "window") {
+      bird.mode = "tree";
+      bird.hops = Math.round(rand(2, 3));
+      birdLeg(t, treeSpot(), rand(850, 1100), rand(600, 1500));
+    } else if (bird.mode === "leave") {
+      bird.mode = "away";
+      bird.until = t + rand(45000, 60000);
+    } else if (--bird.hops > 0) {
+      bird.mode = "tree";
+      birdLeg(t, treeSpot(), rand(280, 520), rand(600, 1900));
+    } else if (!bird.visited) {
       bird.mode = "window";
+      bird.visited = true;
       const Wn = world.bird.window;
       birdLeg(t, { x: Wn.x + rand(-12, 12), y: Wn.y + rand(-10, 10), k: 2.4, face: -1 }, rand(900, 1200), rand(3200, 4500));
     } else {
-      if (bird.mode === "window") bird.hops = Math.round(rand(5, 9));
-      bird.mode = "tree";
-      const back = bird.k > 1.5;
-      birdLeg(t, treeSpot(), back ? rand(850, 1100) : rand(280, 520), rand(600, 1900));
+      bird.mode = "leave";
+      birdLeg(t, offscreen(), rand(900, 1200), 0);
     }
   }
 
   function updateBird(t) {
-    if (!bird.ready) {
-      Object.assign(bird, treeSpot(), { ready: true, mode: "tree", hops: 3, face: 1 });
-      birdLeg(t, treeSpot(), 400, 900);
-    }
+    if (!bird.ready) Object.assign(bird, { ready: true, mode: "away", until: t + 5000 });
     if (t >= bird.until) birdNext(t);
+    if (bird.mode === "away") return null;
     const e = Math.min(1, (t - bird.start) / bird.dur);
     const ease = e < 0.5 ? 4 * e * e * e : 1 - Math.pow(-2 * e + 2, 3) / 2;
     const lift = Math.sin(Math.PI * e) * Math.min(30, Math.hypot(bird.to.x - bird.from.x, bird.to.y - bird.from.y) * 0.15);
@@ -833,6 +849,7 @@
   function drawBird(t) {
     if (mode !== "day" || world.narrow || !world.bird) return;
     const hovering = still.matches ? true : updateBird(t);
+    if (hovering === null) return;
     if (still.matches && !bird.ready) Object.assign(bird, treeSpot(), { ready: true });
     const L = world.bird.size * (bird.k || 1);
     ctx.save();
