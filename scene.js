@@ -21,14 +21,13 @@
       ground: ["#2b1452", "#0d061c"], rows: ["#2a1450", "#1d0d3a", "#130828"], rowRim: "rgba(255, 150, 200, 0.35)",
       fw: ["#1a0c36", "rgba(255, 140, 200, 0.6)", "#170b30"],
       bridge: "#24134a", bayLights: 1, deckLights: "rgba(255, 211, 110, 0.85)",
-      tree: ["#0c0619", "rgba(255, 113, 206, 0.5)", "rgba(255, 140, 210, 0.22)"],
       wood: "#0b0519", frameRim: "rgba(255, 113, 206, 0.28)",
       sill: ["#2b1453", "#150a2c"], sillLine: "rgba(255, 140, 210, 0.6)",
       desk: ["#22103f", "#07030f"], deskEdge: "rgba(255, 79, 184, 0.75)",
       curtain: ["rgba(58, 22, 110, 0)", "rgba(58, 22, 110, 0.85)", "rgba(34, 12, 70, 0.95)", "rgba(70, 28, 130, 0.9)", "rgba(20, 8, 44, 1)"],
       obj: "#0a0418", objRim: "rgba(255, 113, 206, 0.95)", plantRim: "rgba(61, 255, 176, 0.55)", steam: "rgba(239, 230, 255, 0.22)",
       crownBase: [46, 28, 92], crownGlow: 0.55,
-      train: { body: ["#e4ddf7", "#9a8cc9"], stripe: "#ff3d6e", win: "rgba(255, 214, 140, 0.95)", cab: "rgba(255, 230, 180, 0.9)", under: "#140a2a", wire: "rgba(255, 140, 200, 0.4)", glow: 0.9 },
+      train: { body: ["#e4ddf7", "#9a8cc9"], stripe: "#ff3d6e", win: "rgba(255, 214, 140, 0.95)", cab: "rgba(255, 230, 180, 0.9)", under: "#140a2a", glow: 0.9 },
     },
     day: {
       sky: [[0, "#86b4ff"], [0.34, "#b5a9ff"], [0.64, "#f1a7d9"], [0.88, "#ffc4b4"], [1, "#ffe2ad"]],
@@ -42,14 +41,13 @@
       ground: ["#a48ad2", "#6f56a2"], rows: ["#9781c9", "#8169b6", "#6a539f"], rowRim: "rgba(255, 245, 250, 0.6)",
       fw: ["#5c4892", "rgba(255, 255, 255, 0.7)", "#6a56a0"],
       bridge: "#6c5fa6", bayLights: 0.25, deckLights: "rgba(255, 255, 255, 0.5)",
-      tree: ["#3f2f6c", "rgba(255, 255, 255, 0.45)", "rgba(255, 255, 255, 0.3)"],
       wood: "#cdbdf0", frameRim: "rgba(255, 255, 255, 0.8)",
       sill: ["#efe6ff", "#d3c3f5"], sillLine: "rgba(255, 255, 255, 0.95)",
       desk: ["#dccdfb", "#a993d9"], deskEdge: "rgba(255, 113, 206, 0.7)",
       curtain: ["rgba(255, 180, 222, 0)", "rgba(255, 180, 222, 0.75)", "rgba(244, 150, 205, 0.9)", "rgba(255, 196, 228, 0.85)", "rgba(230, 140, 196, 1)"],
       obj: "#4a3683", objRim: "rgba(255, 255, 255, 0.9)", plantRim: "rgba(255, 255, 255, 0.7)", steam: "rgba(90, 70, 150, 0.3)",
       crownBase: [150, 130, 205], crownGlow: 0.2,
-      train: { body: ["#ffffff", "#d4caf0"], stripe: "#e0284a", win: "#4b3b80", cab: "#3a2c6a", under: "#4a3a7c", wire: "rgba(80, 60, 140, 0.45)", glow: 0.25 },
+      train: { body: ["#ffffff", "#d4caf0"], stripe: "#e0284a", win: "#4b3b80", cab: "#3a2c6a", under: "#4a3a7c", glow: 0.25 },
     },
   };
   const stored = (() => {
@@ -227,25 +225,34 @@
     };
     world.freeway = fw;
 
-    const carH = Math.max(7, d * 0.075);
-    const carW = carH * 3.4;
-    const cars = 5;
-    const gap = Math.max(1, carH * 0.08);
-    const len = cars * carW + (cars - 1) * gap;
-    const trackY = horizon + d * 0.5;
+    const carH = Math.max(7, d * 0.08);
     const monLeft = monBox.left - box.left;
     const monRight = monBox.right - box.left;
+    const p0 = [frame.right + carH * 4, horizon + d * 0.64];
+    const p1 = [monRight + (frame.right - monRight) * 0.45, horizon + d * 0.55];
+    const p2 = [(monLeft + monRight) / 2, horizon + d * 0.38];
+    const lut = [{ s: 0, x: p0[0], y: p0[1] }];
+    for (let i = 1; i <= 240; i++) {
+      const u = i / 240;
+      const x = (1 - u) * (1 - u) * p0[0] + 2 * (1 - u) * u * p1[0] + u * u * p2[0];
+      const y = (1 - u) * (1 - u) * p0[1] + 2 * (1 - u) * u * p1[1] + u * u * p2[1];
+      const prev = lut[i - 1];
+      lut.push({ s: prev.s + Math.hypot(x - prev.x, y - prev.y), x, y });
+    }
+    const sAtX = (x) => (lut.find((q) => q.x <= x) || lut[lut.length - 1]).s;
+    const cars = 5;
+    const gap = Math.max(1, carH * 0.08);
+    const len = cars * carH * 3.4 + (cars - 1) * gap;
+    const clipX = (monLeft + monRight) / 2;
     world.train = {
-      y: trackY,
       h: carH,
-      w: carW,
+      w: carH * 3.4,
       cars,
       gap,
-      len,
-      wireY: trackY - carH * 1.55,
-      enter: frame.right + 40,
-      stop: Math.max(monLeft, monRight - len * 0.55),
-      exit: frame.left - len - 40,
+      lut,
+      clipX,
+      stop: sAtX(monRight - carH * 0.8),
+      end: sAtX(clipX) + len * 1.1,
     };
     world.cars = Array.from({ length: Math.round(W / 26) }, () => ({ u: Math.random(), v: rand(0.00004, 0.00007), dir: Math.random() < 0.5 ? 1 : -1 }));
 
@@ -272,29 +279,8 @@
         x += w + rand(0, 6);
       }
     });
-    const tr = world.train;
-    m.fillStyle = P.train.under;
-    m.fillRect(frame.left - 30, tr.y, frame.right - frame.left + 60, Math.max(1.5, tr.h * 0.12));
-    m.strokeStyle = P.train.wire;
-    m.lineWidth = 1;
-    m.beginPath();
-    m.moveTo(frame.left - 30, tr.wireY);
-    m.lineTo(frame.right + 30, tr.wireY);
-    for (let x = frame.right - tr.w * 0.4; x > frame.left - 30; x -= tr.w * 1.6) {
-      m.moveTo(x, tr.y);
-      m.lineTo(x, tr.wireY - tr.h * 0.25);
-      m.moveTo(x - tr.h * 0.35, tr.wireY - tr.h * 0.1);
-      m.lineTo(x, tr.wireY - tr.h * 0.1);
-    }
-    m.stroke();
     world.midground = mid.c;
 
-    const trees = layer();
-    const tg = trees.g;
-    if (!narrow) {
-      eucalyptus(tg, right.b - rw * 0.15, frame.bottom + 6, Math.min(d * 1.05 + sfH * 0.2, U * 0.46), rw * 0.22);
-    }
-    world.trees = trees.c;
   }
 
   function tower(g, b, base) {
@@ -418,48 +404,7 @@
     g.stroke();
   }
 
-  function eucalyptus(g, x, base, h, spread) {
-    const clusters = Array.from({ length: 8 }, (_, i) => ({
-      cx: x + rand(-spread * 0.5, spread * 0.5),
-      cy: base - h * (0.38 + (i / 8) * 0.58),
-      rx: spread * rand(0.22, 0.4),
-      ry: h * rand(0.06, 0.11),
-    }));
-    const leaves = [];
-    for (const c of clusters) {
-      for (let i = 0; i < 90; i++) {
-        const a = Math.random() * Math.PI * 2;
-        const r = Math.sqrt(Math.random());
-        const len = h * rand(0.016, 0.03);
-        leaves.push([c.cx + Math.cos(a) * c.rx * r, c.cy + Math.sin(a) * c.ry * r + len * 0.6, len * 0.3, len, rand(-0.35, 0.35)]);
-      }
-    }
-    const paint = (color, dx, dy) => {
-      g.strokeStyle = color;
-      g.fillStyle = color;
-      g.lineCap = "round";
-      g.lineWidth = Math.max(3, h * 0.018);
-      g.beginPath();
-      g.moveTo(x + dx, base + dy);
-      g.quadraticCurveTo(x + spread * 0.1 + dx, base - h * 0.5 + dy, x - spread * 0.05 + dx, base - h * 0.95 + dy);
-      g.stroke();
-      g.lineWidth = Math.max(1.4, h * 0.007);
-      for (const c of clusters) {
-        g.beginPath();
-        g.moveTo(x + spread * 0.04 + dx, c.cy + h * 0.12 + dy);
-        g.quadraticCurveTo((x + c.cx) / 2 + dx, c.cy + dy, c.cx + dx, c.cy + dy);
-        g.stroke();
-      }
-      g.beginPath();
-      for (const [lx, ly, rw, rh, tilt] of leaves) {
-        g.moveTo(lx + dx + rw, ly + dy);
-        g.ellipse(lx + dx, ly + dy, rw, rh, tilt, 0, Math.PI * 2);
-      }
-      g.fill();
-    };
-    paint(P.tree[1], -1, -1);
-    paint(P.tree[0], 0, 0);
-  }
+
 
 
   function drawSky(t) {
@@ -779,98 +724,121 @@
     }
   }
 
-  const TRAIN = { cycle: 48000, arrive: 8000, dwell: 10000, depart: 9000, delay: 1500 };
+  const TRAIN = { cycle: 40000, arrive: 9000, dwell: 6000, depart: 6000, delay: 1500 };
 
   function trainFront(t) {
     const tr = world.train;
     if (still.matches) return tr.stop;
-    const p = (((t - TRAIN.delay) % TRAIN.cycle) + TRAIN.cycle) % TRAIN.cycle;
-    if (p < TRAIN.arrive) {
-      const e = 1 - Math.pow(1 - p / TRAIN.arrive, 3);
-      return tr.enter + (tr.stop - tr.enter) * e;
-    }
+    if (t < TRAIN.delay) return null;
+    const p = (t - TRAIN.delay) % TRAIN.cycle;
+    if (p < TRAIN.arrive) return tr.stop * (1 - Math.pow(1 - p / TRAIN.arrive, 3));
     if (p < TRAIN.arrive + TRAIN.dwell) return tr.stop;
     const q = p - TRAIN.arrive - TRAIN.dwell;
-    if (q < TRAIN.depart) {
-      const e = q / TRAIN.depart;
-      return tr.stop + (tr.exit - tr.stop) * e * e;
-    }
+    if (q < TRAIN.depart) return tr.stop + (tr.end - tr.stop) * Math.pow(q / TRAIN.depart, 2);
     return null;
+  }
+
+  function along(tr, s) {
+    const lut = tr.lut;
+    const last = lut[lut.length - 1];
+    const span = (i, j, d) => {
+      const a = lut[i];
+      const b = lut[j];
+      const dx = (b.x - a.x) / (b.s - a.s);
+      const dy = (b.y - a.y) / (b.s - a.s);
+      return { x: a.x + dx * d, y: a.y + dy * d, angle: Math.atan2(-dy, -dx) };
+    };
+    if (s <= 0) return span(0, 1, s);
+    if (s >= last.s) return span(lut.length - 2, lut.length - 1, s - lut[lut.length - 2].s);
+    let lo = 0;
+    let hi = lut.length - 1;
+    while (hi - lo > 1) {
+      const mid = (lo + hi) >> 1;
+      if (lut[mid].s < s) lo = mid;
+      else hi = mid;
+    }
+    return span(lo, hi, s - lut[lo].s);
+  }
+
+  function drawCar(C, w, h, nose, tail) {
+    const top = -h;
+    const body = ctx.createLinearGradient(0, top, 0, 0);
+    body.addColorStop(0, C.body[0]);
+    body.addColorStop(1, C.body[1]);
+    ctx.fillStyle = body;
+    ctx.beginPath();
+    if (nose) {
+      ctx.moveTo(h * 0.55, top);
+      ctx.lineTo(w - h * 0.12, top);
+      ctx.quadraticCurveTo(w, top, w, top + h * 0.12);
+      ctx.lineTo(w, 0);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(0, top + h * 0.6);
+      ctx.closePath();
+    } else {
+      ctx.roundRect(0, top, w, h, [h * 0.12, h * 0.12, 0, 0]);
+    }
+    ctx.fill();
+    ctx.fillStyle = C.stripe;
+    ctx.fillRect(nose ? h * 0.05 : 0, -h * 0.3, w - (nose ? h * 0.05 : 0), Math.max(1, h * 0.11));
+    ctx.fillStyle = C.under;
+    ctx.fillRect(0, -h * 0.1, w, h * 0.1);
+    ctx.fillStyle = C.win;
+    for (let wx = nose ? h * 0.85 : h * 0.3; wx + h * 0.32 < w - h * 0.2; wx += h * 0.52) {
+      ctx.fillRect(wx, top + h * 0.17, h * 0.32, h * 0.2);
+      ctx.fillRect(wx, top + h * 0.47, h * 0.32, h * 0.16);
+    }
+    if (nose) {
+      ctx.fillStyle = C.cab;
+      ctx.beginPath();
+      ctx.moveTo(h * 0.55, top + h * 0.12);
+      ctx.lineTo(h * 0.72, top + h * 0.12);
+      ctx.lineTo(h * 0.72, top + h * 0.42);
+      ctx.lineTo(h * 0.16, top + h * 0.42);
+      ctx.closePath();
+      ctx.fill();
+      const hy = -h * 0.2;
+      const glow = ctx.createRadialGradient(h * 0.1, hy, 0, h * 0.1, hy, h * 1.4);
+      glow.addColorStop(0, `rgba(255, 250, 225, ${C.glow})`);
+      glow.addColorStop(1, "rgba(255, 250, 225, 0)");
+      ctx.fillStyle = glow;
+      ctx.beginPath();
+      ctx.arc(h * 0.1, hy, h * 1.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fffbe8";
+      ctx.fillRect(h * 0.1 - 1, hy - 1, 2.5, 2);
+    }
+    if (tail) {
+      ctx.fillStyle = "#ff3355";
+      ctx.fillRect(w - 2.5, -h * 0.24, 2, 2);
+    }
   }
 
   function drawTrain(t) {
     const tr = world.train;
     const front = trainFront(t);
-    if (front === null || t < TRAIN.delay && !still.matches) return;
-    const C = P.train;
-    const { h, w } = tr;
-    const bottom = tr.y;
-    const top = bottom - h;
-    const body = ctx.createLinearGradient(0, top, 0, bottom);
-    body.addColorStop(0, C.body[0]);
-    body.addColorStop(1, C.body[1]);
+    if (front === null) return;
+    const total = tr.lut[tr.lut.length - 1].s;
+    const size = (s) => 1 - 0.22 * Math.min(1, Math.max(0, s / total));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(tr.clipX, 0, W - tr.clipX, H);
+    ctx.clip();
+    let s = front;
     for (let i = 0; i < tr.cars; i++) {
-      const x = front + i * (w + tr.gap);
-      if (x > W + 10 || x + w < -10) continue;
-      const nose = i === 0;
-      const tail = i === tr.cars - 1;
-      ctx.fillStyle = body;
-      ctx.beginPath();
-      if (nose) {
-        ctx.moveTo(x + h * 0.55, top);
-        ctx.lineTo(x + w - h * 0.12, top);
-        ctx.quadraticCurveTo(x + w, top, x + w, top + h * 0.12);
-        ctx.lineTo(x + w, bottom);
-        ctx.lineTo(x, bottom);
-        ctx.lineTo(x, top + h * 0.6);
-        ctx.closePath();
-      } else {
-        ctx.roundRect(x, top, w, h, [h * 0.12, h * 0.12, 0, 0]);
-      }
-      ctx.fill();
-      ctx.fillStyle = C.stripe;
-      ctx.fillRect(x + (nose ? h * 0.05 : 0), bottom - h * 0.3, w - (nose ? h * 0.05 : 0), Math.max(1, h * 0.11));
-      ctx.fillStyle = C.under;
-      ctx.fillRect(x, bottom - h * 0.1, w, h * 0.1);
-      ctx.fillStyle = C.win;
-      const start = x + (nose ? h * 0.85 : h * 0.3);
-      for (let wx = start; wx + h * 0.32 < x + w - h * 0.2; wx += h * 0.52) {
-        ctx.fillRect(wx, top + h * 0.17, h * 0.32, h * 0.2);
-        ctx.fillRect(wx, top + h * 0.47, h * 0.32, h * 0.16);
-      }
-      if (nose) {
-        ctx.fillStyle = C.cab;
-        ctx.beginPath();
-        ctx.moveTo(x + h * 0.55, top + h * 0.12);
-        ctx.lineTo(x + h * 0.72, top + h * 0.12);
-        ctx.lineTo(x + h * 0.72, top + h * 0.42);
-        ctx.lineTo(x + h * 0.16, top + h * 0.42);
-        ctx.closePath();
-        ctx.fill();
-        ctx.strokeStyle = C.under;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(x + w * 0.45, top);
-        ctx.lineTo(x + w * 0.55, top - (top - tr.wireY) * 0.5);
-        ctx.lineTo(x + w * 0.45, tr.wireY);
-        ctx.stroke();
-        const hx = x + h * 0.1;
-        const hy = bottom - h * 0.2;
-        const glow = ctx.createRadialGradient(hx, hy, 0, hx, hy, h * 1.4);
-        glow.addColorStop(0, `rgba(255, 250, 225, ${C.glow})`);
-        glow.addColorStop(1, "rgba(255, 250, 225, 0)");
-        ctx.fillStyle = glow;
-        ctx.beginPath();
-        ctx.arc(hx, hy, h * 1.4, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = "#fffbe8";
-        ctx.fillRect(hx - 1, hy - 1, 2.5, 2);
-      }
-      if (tail) {
-        ctx.fillStyle = "#ff3355";
-        ctx.fillRect(x + w - 2.5, bottom - h * 0.24, 2, 2);
-      }
+      const k = size(s);
+      const w = tr.w * k;
+      const h = tr.h * k;
+      const mid = along(tr, s - w / 2);
+      ctx.save();
+      ctx.translate(mid.x, mid.y);
+      ctx.rotate(mid.angle);
+      ctx.translate(-w / 2, 0);
+      drawCar(P.train, w, h, i === 0, i === tr.cars - 1);
+      ctx.restore();
+      s -= w + tr.gap * k;
     }
+    ctx.restore();
   }
 
   function room(t) {
@@ -1113,7 +1081,6 @@
     ctx.drawImage(world.midground, 0, 0, W, H);
     drawCars(t);
     drawTrain(t);
-    ctx.drawImage(world.trees, 0, 0, W, H);
     room(t);
   }
 
