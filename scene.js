@@ -251,7 +251,7 @@
 
     const rows = [0.16, 0.5, 0.86];
     rows.forEach((f, i) => {
-      if (i === 1) freewayStructure(m, fw, horizon + d * 0.5);
+      if (i === 2) freewayStructure(m, fw, horizon + d * 0.5);
       const base = horizon + d * f;
       const shade = P.rows[i];
       for (let x = frame.left - 30; x < frame.right + 30; ) {
@@ -292,7 +292,7 @@
     const trees = layer();
     const tg = trees.g;
     if (!narrow) {
-      eucalyptus(tg, right.b - rw * 0.06, frame.bottom + 6, Math.min(d * 1.05 + sfH * 0.2, U * 0.46), rw * 0.22);
+      eucalyptus(tg, right.b - rw * 0.15, frame.bottom + 6, Math.min(d * 1.05 + sfH * 0.2, U * 0.46), rw * 0.22);
     }
     world.trees = trees.c;
   }
@@ -419,46 +419,48 @@
   }
 
   function eucalyptus(g, x, base, h, spread) {
-    const clusters = Array.from({ length: 7 }, (_, i) => ({
+    const clusters = Array.from({ length: 8 }, (_, i) => ({
       cx: x + rand(-spread * 0.5, spread * 0.5),
-      cy: base - h * (0.35 + (i / 7) * 0.6),
-      rx: spread * rand(0.25, 0.45),
-      ry: h * rand(0.08, 0.14),
+      cy: base - h * (0.38 + (i / 8) * 0.58),
+      rx: spread * rand(0.22, 0.4),
+      ry: h * rand(0.06, 0.11),
     }));
     const leaves = [];
     for (const c of clusters) {
-      for (let i = 0; i < 160; i++) {
+      for (let i = 0; i < 90; i++) {
         const a = Math.random() * Math.PI * 2;
         const r = Math.sqrt(Math.random());
-        leaves.push([c.cx + Math.cos(a) * c.rx * r, c.cy + Math.sin(a) * c.ry * r, rand(-2, 2), rand(9, 20)]);
+        const len = h * rand(0.016, 0.03);
+        leaves.push([c.cx + Math.cos(a) * c.rx * r, c.cy + Math.sin(a) * c.ry * r + len * 0.6, len * 0.3, len, rand(-0.35, 0.35)]);
       }
     }
-    const branches = clusters.map((c) => [c.cx, c.cy]);
     const paint = (color, dx, dy) => {
       g.strokeStyle = color;
-      g.lineWidth = Math.max(3, h * 0.016);
+      g.fillStyle = color;
+      g.lineCap = "round";
+      g.lineWidth = Math.max(3, h * 0.018);
       g.beginPath();
       g.moveTo(x + dx, base + dy);
       g.quadraticCurveTo(x + spread * 0.1 + dx, base - h * 0.5 + dy, x - spread * 0.05 + dx, base - h * 0.95 + dy);
       g.stroke();
-      g.lineWidth = Math.max(1.2, h * 0.006);
-      for (const [bx, by] of branches) {
+      g.lineWidth = Math.max(1.4, h * 0.007);
+      for (const c of clusters) {
         g.beginPath();
-        g.moveTo(x + spread * 0.04 + dx, by + h * 0.12 + dy);
-        g.quadraticCurveTo((x + bx) / 2 + dx, by + dy, bx + dx, by + dy);
+        g.moveTo(x + spread * 0.04 + dx, c.cy + h * 0.12 + dy);
+        g.quadraticCurveTo((x + c.cx) / 2 + dx, c.cy + dy, c.cx + dx, c.cy + dy);
         g.stroke();
       }
-      g.lineWidth = 1.6;
       g.beginPath();
-      for (const [lx, ly, sx, sy] of leaves) {
-        g.moveTo(lx + dx, ly + dy);
-        g.lineTo(lx + sx + dx, ly + sy + dy);
+      for (const [lx, ly, rw, rh, tilt] of leaves) {
+        g.moveTo(lx + dx + rw, ly + dy);
+        g.ellipse(lx + dx, ly + dy, rw, rh, tilt, 0, Math.PI * 2);
       }
-      g.stroke();
+      g.fill();
     };
-    paint(P.tree[2], 1.2, -0.8);
+    paint(P.tree[1], -1, -1);
     paint(P.tree[0], 0, 0);
   }
+
 
   function drawSky(t) {
     const { frame, horizon } = world;
