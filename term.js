@@ -514,6 +514,10 @@
     out(`${controls("pause", "next", "prev", "shuffle", "vol", "tracks")}${window.synthwave.repeat ? " <span class='d nw'>· repeat on</span>" : ""}`);
   }
 
+  function track(event, data) {
+    if (window.umami) window.umami.track(event, data);
+  }
+
   function cmd(name) {
     return `<button type="button" class="cmd-link" data-cmd="${name}">${name}</button>`;
   }
@@ -532,9 +536,11 @@
     const key = aliases[name.toLowerCase()] || name.toLowerCase();
     const fn = commands[key];
     if (!fn) {
+      track("command", { name: "unknown", typed: name.toLowerCase().slice(0, 24) });
       out(`command not found: ${esc(name)}. try help`, "err");
       return;
     }
+    track("command", args.length ? { name: key, arg: args.join(" ").toLowerCase().slice(0, 40) } : { name: key });
     driveLed.classList.add("on");
     setTimeout(() => driveLed.classList.remove("on"), 120);
     await fn(args);
@@ -735,10 +741,16 @@
     }, 900);
   }
 
+  document.addEventListener("click", (e) => {
+    const a = e.target.closest("a[href^='http']");
+    if (a && a.hostname !== location.hostname) track("link", { to: a.hostname.replace(/^www\./, "") });
+  });
+
   document.querySelectorAll("[data-run]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       if (btn.classList.contains("disk")) {
         if (btn.classList.contains("away")) return;
+        track("disk", { name: btn.dataset.run });
         await insertDisk(btn);
       }
       typeAndRun(btn.dataset.run);
@@ -829,7 +841,10 @@
     }, still.matches ? 0 : 520);
   }
 
-  powerBtn.addEventListener("click", () => (on ? powerOff() : powerOn()));
+  powerBtn.addEventListener("click", () => {
+    track("power", { to: on ? "off" : "on" });
+    on ? powerOff() : powerOn();
+  });
   wake.addEventListener("click", () => powerOn());
 
   boot();
