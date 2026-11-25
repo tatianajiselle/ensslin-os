@@ -18,8 +18,10 @@
     medium: "https://medium.com/@tatianaensslin",
     github: "https://github.com/tatianajiselle",
     saveabunny: "https://www.saveabunny.org/",
+    soundshark: "https://soundshark.dev/",
+    soundsharkCode: "https://github.com/tatianajiselle/soundshark",
   };
-  const FILES = ["now.log", "projects/", "community.txt", "offline.mp3", "contact.sh", "fib.lu", "resume.pdf"];
+  const FILES = ["now.log", "projects/", "community.txt", "offline.mp3", "contact.sh", "resume.pdf"];
   const THEMES = ["pink", "cyan", "mint", "amber"];
 
   let on = false;
@@ -70,7 +72,7 @@
         ["whoami", "who's this"],
         ["now", "current work"],
         ["projects", "what I'm building"],
-        ["lucid", "my language"],
+        ["soundshark", "my main project"],
         ["community", "talks, writing"],
         ["offline", "away from keys"],
         ["contact", "say hello"],
@@ -119,30 +121,28 @@
     },
 
     projects() {
-      out("drwxr-xr-x  <span class='hi'>lucid/</span>          a language agents write and humans read");
+      out("drwxr-xr-x  <span class='hi'>soundshark/</span>     maps a music scene: who plays with whom, who sounds alike");
       out("drwxr-xr-x  <span class='hi'>merge-risk/</span>     LLM code review that cut time-to-merge 76%");
       out("drwxr-xr-x  <span class='hi'>messaging/</span>      Zillow's messaging platform, 1.3B req/month");
       out("drwxr-xr-x  <span class='hi'>claude-skills/</span>  a skills plugin installed across my org");
       gap();
-      out("try: <span class='m'>lucid run fib.lu</span>", "d");
+      out("try: <span class='m'>soundshark</span>", "d");
     },
 
-    async lucid(args) {
-      if (args[0] === "run") {
-        const file = args[1] || "fib.lu";
-        if (file !== "fib.lu") return out(`lucid: ${esc(file)}: no such file`, "err");
-        out("compiling fib.lu → C → native", "d");
-        await blinkDrive(400);
-        out("<span class='ok'>ok</span> <span class='d'>0.04s</span>");
-        out("[832040, 1346269, 2178309]", "m");
-        return;
-      }
-      out("lucid: a programming language that agents write and humans read.", "hi");
-      out("Compiles to native code through C. No comments, every argument named, every effect declared.");
+    soundshark() {
+      out("soundshark", "hi");
+      out("Map a music scene. SoundShark crawls DJ lineups, past and upcoming, into a graph of who plays with whom, then listens to the music to find who really sounds alike.");
       gap();
-      commands.cat(["fib.lu"]);
+      out("v1  <span class='c'>the lineup graph</span>");
+      out("    a polite async crawler that expands outward from seed DJs");
+      out("    relatedness that rewards b2b sets and recent shows");
+      out("    personalized PageRank and automatic scene detection");
+      out("v2  <span class='c'>the sound graph</span>");
+      out("    audio embeddings, vector search, a hybrid recommender");
       gap();
-      out("usage: <span class='m'>lucid run fib.lu</span>", "d");
+      out("stack  <span class='d'>Python · asyncio · Postgres · graph ranking · Vite explorer</span>");
+      out(`site   ${link(LINKS.soundshark, "soundshark.dev")}`);
+      out(`code   ${link(LINKS.soundsharkCode, "github.com/tatianajiselle/soundshark")}`);
     },
 
     community() {
@@ -180,9 +180,9 @@
     },
 
     bunny() {
-      out(" (\\(\\", "hi");
-      out(" ( -.-)", "hi");
-      out(' o_(")(")', "hi");
+      out(`<div class="bunny-row"><img class="bunny-photo" src="img/bunny.jpg" alt="A fluffy lionhead bunny resting on a quilted mat" width="440" height="440"><div><pre class="bunny-art"> (\\(\\
+ ( -.-)
+ o_(")(")</pre><div class="d">this is my permanent foster</div></div></div>`);
       gap();
       out(`I volunteer with SaveABunny, a Bay Area rabbit rescue. ${link(LINKS.saveabunny, "adopt one")}`);
     },
@@ -224,7 +224,7 @@
         "<span class='d'>────────────────</span>",
         "<span class='c'>os</span>        ensslin/os 2026",
         "<span class='c'>role</span>      senior swe @ zillow",
-        "<span class='c'>shell</span>     lucid",
+        "<span class='c'>shell</span>     zsh",
         "<span class='c'>uptime</span>    since 2017 (syracuse ce)",
         "<span class='c'>location</span>  sf bay area",
         "<span class='c'>stack</span>     java, kafka, k8s",
@@ -312,18 +312,6 @@
       if (f === "resume.pdf") return commands.resume();
       if (f === "projects" || f === "projects/") return out("cat: projects/: is a directory. try: projects", "err");
       if (f === "offline.mp3") return out("cat: offline.mp3: binary file. try: play offline.mp3", "err");
-      if (f === "fib.lu") {
-        return out(`<pre class="code"><b>fn</b> fib(of n: Int) -&gt; Int
-  <i>effects: none</i>
-  <b>if</b> n &lt; 2
-    <b>return</b> n
-  <b>return</b> fib(of: n - 1) + fib(of: n - 2)
-
-<b>fn</b> main()
-  <i>effects: console</i>
-  <b>let</b> counts = <b>parallel map</b> [30, 31, 32]: n =&gt; fib(of: n)
-  print(line: "{counts}")</pre>`);
-      }
       out(`cat: ${esc(f)}: no such file`, "err");
     },
 
@@ -390,7 +378,7 @@
     },
   };
 
-  const aliases = { skip: "next", back: "prev", pause: "stop", playlist: "tracks", techno: "tracks", night: "moon", day: "sun", dusk: "sun", light: "sun", dark: "moon", hello: "hi", work: "now", about: "whoami", exit: "shutdown", emacs: "vim", fetch: "tfetch", neofetch: "tfetch", hobbies: "offline", email: "contact", talks: "community", cd: "ls" };
+  const aliases = { shark: "soundshark", skip: "next", back: "prev", pause: "stop", playlist: "tracks", techno: "tracks", night: "moon", day: "sun", dusk: "sun", light: "sun", dark: "moon", hello: "hi", work: "now", about: "whoami", exit: "shutdown", emacs: "vim", fetch: "tfetch", neofetch: "tfetch", hobbies: "offline", email: "contact", talks: "community", cd: "ls" };
 
   function nowPlaying() {
     const n = window.synthwave.now;
@@ -636,7 +624,7 @@
       ["cpu: computer engineering, syracuse '17 .... <span class='ok'>ok</span>"],
       ["memory: 4 engineers, 1 messaging platform .. <span class='ok'>ok</span>"],
       ["drives: A: floppy   B: bunny ............... <span class='ok'>ok</span>"],
-      ["loading lucid kernel ...................... <span class='ok'>ok</span>"],
+      ["loading kernel ............................ <span class='ok'>ok</span>"],
       ["mounting /home/tatiana .................... <span class='ok'>ok</span>"],
     ];
     await wait(350);
